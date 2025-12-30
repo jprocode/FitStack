@@ -12,6 +12,8 @@ import {
   History,
   LogOut,
   Activity,
+  Utensils,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +25,8 @@ const navItems = [
   { href: '/exercises', label: 'Exercises', icon: Dumbbell },
   { href: '/templates', label: 'Templates', icon: ListTodo },
   { href: '/history', label: 'History', icon: History },
+  { href: '/nutrition/dashboard', label: 'Nutrition', icon: Utensils },
+  { href: '/nutrition/meal-plans', label: 'Meal Plans', icon: Sparkles },
 ]
 
 export default function Layout() {

@@ -51,3 +51,35 @@ export function sendSetComplete(
   }
 }
 
+export function startRestTimer(
+  client: Client,
+  sessionId: number,
+  exerciseId: number,
+  setNumber: number,
+  totalSeconds: number
+): void {
+  if (client.connected) {
+    client.publish({
+      destination: `/app/workout/${sessionId}/start-timer`,
+      body: JSON.stringify({
+        sessionId,
+        exerciseId,
+        setNumber,
+        totalSeconds,
+      }),
+    })
+  }
+}
+
+export function stopRestTimer(
+  client: Client,
+  sessionId: number
+): void {
+  if (client.connected) {
+    client.publish({
+      destination: `/app/workout/${sessionId}/stop-timer`,
+      body: JSON.stringify({ sessionId }),
+    })
+  }
+}
+

@@ -96,5 +96,32 @@ export const sessionApi = {
   getHistory: () => api.get('/workouts/history'),
 }
 
+// Nutrition - Foods API
+export const foodApi = {
+  searchFoods: (query: string, limit?: number) =>
+    api.get('/nutrition/foods/search', { params: { q: query, limit: limit || 20 } }),
+  getFoodById: (id: number) => api.get(`/nutrition/foods/${id}`),
+  getFoodByFdcId: (fdcId: number) => api.get(`/nutrition/foods/fdc/${fdcId}`),
+}
+
+// Nutrition - Meals API
+export const mealApi = {
+  getMeals: (startDate?: string, endDate?: string) =>
+    api.get('/nutrition/meals', { params: { startDate, endDate } }),
+  getMealById: (id: number) => api.get(`/nutrition/meals/${id}`),
+  getTodaysMeals: () => api.get('/nutrition/meals/today'),
+  getDailyMacros: (date: string) => api.get('/nutrition/meals/daily', { params: { date } }),
+  createMeal: (data: Record<string, unknown>) => api.post('/nutrition/meals', data),
+  deleteMeal: (id: number) => api.delete(`/nutrition/meals/${id}`),
+}
+
+// Nutrition - Meal Plans API
+export const mealPlanApi = {
+  getMealPlans: () => api.get('/nutrition/meal-plans'),
+  getMealPlan: (id: number) => api.get(`/nutrition/meal-plans/${id}`),
+  generateMealPlan: (data: Record<string, unknown>) => api.post('/nutrition/meal-plans/generate', data),
+  deleteMealPlan: (id: number) => api.delete(`/nutrition/meal-plans/${id}`),
+}
+
 export default api
 
