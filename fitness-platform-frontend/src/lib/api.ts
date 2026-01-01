@@ -123,5 +123,25 @@ export const mealPlanApi = {
   deleteMealPlan: (id: number) => api.delete(`/nutrition/meal-plans/${id}`),
 }
 
+// Body Analytics API
+export const analyticsApi = {
+  getWeightTrend: (startDate: string, endDate: string) =>
+    api.get('/users/analytics/weight-trend', { params: { startDate, endDate } }),
+  getGoalProgress: () => api.get('/users/analytics/goal-progress'),
+  getMetricsStats: (period: string) =>
+    api.get('/users/analytics/stats', { params: { period } }),
+  predictGoalCompletion: (goalId: number) => api.get(`/users/analytics/predict/${goalId}`),
+}
+
+// Workout Analytics API
+export const workoutAnalyticsApi = {
+  getFrequency: (startDate: string, endDate: string) =>
+    api.get('/workouts/analytics/frequency', { params: { startDate, endDate } }),
+  getVolume: (exerciseId?: number, period?: string) =>
+    api.get('/workouts/analytics/volume', { params: { exerciseId, period } }),
+  getPersonalRecords: () => api.get('/workouts/analytics/personal-records'),
+  getProgressiveOverload: () => api.get('/workouts/analytics/progressive-overload'),
+}
+
 export default api
 

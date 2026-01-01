@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  .dark {
     --background: 220 20% 4%;
     --foreground: 210 20% 98%;
     --card: 220 18% 8%;
@@ -24,6 +25,13 @@
     --input: 220 15% 20%;
     --ring: 142 70% 45%;
     --radius: 0.75rem;
+    
+    /* Chart colors for dark mode */
+    --chart-1: 142 70% 45%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 45 93% 47%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 340 75% 55%;
   }
 
   .light {
@@ -46,6 +54,13 @@
     --border: 220 14% 90%;
     --input: 220 14% 90%;
     --ring: 142 70% 45%;
+    
+    /* Chart colors for light mode */
+    --chart-1: 142 70% 40%;
+    --chart-2: 199 89% 43%;
+    --chart-3: 45 93% 42%;
+    --chart-4: 262 83% 53%;
+    --chart-5: 340 75% 50%;
   }
 }
 

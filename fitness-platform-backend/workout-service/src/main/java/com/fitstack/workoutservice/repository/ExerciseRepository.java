@@ -14,10 +14,15 @@ import java.util.Optional;
 @Repository
 public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
 
-    @Query("SELECT e FROM Exercise e WHERE " +
-           "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:muscleGroup IS NULL OR LOWER(e.muscleGroup) = LOWER(:muscleGroup)) AND " +
-           "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(:equipment))")
+    @Query(value = "SELECT * FROM exercises e WHERE " +
+           "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
+           "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
+           "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))",
+           countQuery = "SELECT COUNT(*) FROM exercises e WHERE " +
+           "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
+           "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
+           "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))",
+           nativeQuery = true)
     Page<Exercise> findByFilters(
             @Param("search") String search,
             @Param("muscleGroup") String muscleGroup,
