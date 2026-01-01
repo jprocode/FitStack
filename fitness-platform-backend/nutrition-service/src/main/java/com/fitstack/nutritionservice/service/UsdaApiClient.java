@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.util.retry.Retry;
 
 import java.math.BigDecimal;
@@ -41,14 +42,16 @@ public class UsdaApiClient {
         try {
             log.info("Searching USDA API for: {}", query);
 
+            String uri = UriComponentsBuilder.fromHttpUrl(apiUrl + "/foods/search")
+                    .queryParam("api_key", apiKey)
+                    .queryParam("query", query)
+                    .queryParam("pageSize", pageSize)
+                    .queryParam("dataType", "Foundation,SR Legacy,Branded")
+                    .build()
+                    .toUriString();
+
             UsdaFoodResponse response = webClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(apiUrl + "/foods/search")
-                            .queryParam("api_key", apiKey)
-                            .queryParam("query", query)
-                            .queryParam("pageSize", pageSize)
-                            .queryParam("dataType", "Foundation,SR Legacy,Branded")
-                            .build())
+                    .uri(uri)
                     .retrieve()
                     .bodyToMono(UsdaFoodResponse.class)
                     .retryWhen(Retry.fixedDelay(2, Duration.ofSeconds(1)))
