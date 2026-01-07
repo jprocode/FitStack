@@ -32,5 +32,49 @@ public class CreateMetricRequest {
     private LocalDate measurementDate;
 
     private String notes;
-}
 
+    // Optional Extended Metrics (in cm)
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal neckCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "200.0")
+    private BigDecimal shouldersCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "200.0")
+    private BigDecimal chestCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "200.0")
+    private BigDecimal waistCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "200.0")
+    private BigDecimal hipsCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal leftBicepCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal rightBicepCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal leftThighCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal rightThighCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal leftCalfCm;
+
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "100.0")
+    private BigDecimal rightCalfCm;
+}

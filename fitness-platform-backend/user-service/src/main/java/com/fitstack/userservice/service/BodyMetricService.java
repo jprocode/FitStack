@@ -35,6 +35,17 @@ public class BodyMetricService {
                 .bodyFatPct(request.getBodyFatPct())
                 .measurementDate(request.getMeasurementDate())
                 .notes(request.getNotes())
+                .neckCm(request.getNeckCm())
+                .shouldersCm(request.getShouldersCm())
+                .chestCm(request.getChestCm())
+                .waistCm(request.getWaistCm())
+                .hipsCm(request.getHipsCm())
+                .leftBicepCm(request.getLeftBicepCm())
+                .rightBicepCm(request.getRightBicepCm())
+                .leftThighCm(request.getLeftThighCm())
+                .rightThighCm(request.getRightThighCm())
+                .leftCalfCm(request.getLeftCalfCm())
+                .rightCalfCm(request.getRightCalfCm())
                 .build();
 
         metric = bodyMetricRepository.save(metric);
@@ -87,8 +98,18 @@ public class BodyMetricService {
                 .bodyFatPct(metric.getBodyFatPct())
                 .measurementDate(metric.getMeasurementDate())
                 .notes(metric.getNotes())
+                .neckCm(metric.getNeckCm())
+                .shouldersCm(metric.getShouldersCm())
+                .chestCm(metric.getChestCm())
+                .waistCm(metric.getWaistCm())
+                .hipsCm(metric.getHipsCm())
+                .leftBicepCm(metric.getLeftBicepCm())
+                .rightBicepCm(metric.getRightBicepCm())
+                .leftThighCm(metric.getLeftThighCm())
+                .rightThighCm(metric.getRightThighCm())
+                .leftCalfCm(metric.getLeftCalfCm())
+                .rightCalfCm(metric.getRightCalfCm())
                 .createdAt(metric.getCreatedAt())
                 .build();
     }
 }
-

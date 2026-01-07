@@ -36,11 +36,44 @@ public class BodyMetric {
     @Column(name = "measurement_date", nullable = false)
     private LocalDate measurementDate;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    // Extended Measurements (in cm)
+    @Column(name = "neck_cm", precision = 5, scale = 2)
+    private BigDecimal neckCm;
+
+    @Column(name = "shoulders_cm", precision = 5, scale = 2)
+    private BigDecimal shouldersCm;
+
+    @Column(name = "chest_cm", precision = 5, scale = 2)
+    private BigDecimal chestCm;
+
+    @Column(name = "waist_cm", precision = 5, scale = 2)
+    private BigDecimal waistCm;
+
+    @Column(name = "hips_cm", precision = 5, scale = 2)
+    private BigDecimal hipsCm;
+
+    @Column(name = "left_bicep_cm", precision = 5, scale = 2)
+    private BigDecimal leftBicepCm;
+
+    @Column(name = "right_bicep_cm", precision = 5, scale = 2)
+    private BigDecimal rightBicepCm;
+
+    @Column(name = "left_thigh_cm", precision = 5, scale = 2)
+    private BigDecimal leftThighCm;
+
+    @Column(name = "right_thigh_cm", precision = 5, scale = 2)
+    private BigDecimal rightThighCm;
+
+    @Column(name = "left_calf_cm", precision = 5, scale = 2)
+    private BigDecimal leftCalfCm;
+
+    @Column(name = "right_calf_cm", precision = 5, scale = 2)
+    private BigDecimal rightCalfCm;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 }
-

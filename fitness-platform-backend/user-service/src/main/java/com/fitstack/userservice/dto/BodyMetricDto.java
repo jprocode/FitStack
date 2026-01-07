@@ -21,6 +21,19 @@ public class BodyMetricDto {
     private BigDecimal bodyFatPct;
     private LocalDate measurementDate;
     private String notes;
+
+    // Extended Metrics
+    private BigDecimal neckCm;
+    private BigDecimal shouldersCm;
+    private BigDecimal chestCm;
+    private BigDecimal waistCm;
+    private BigDecimal hipsCm;
+    private BigDecimal leftBicepCm;
+    private BigDecimal rightBicepCm;
+    private BigDecimal leftThighCm;
+    private BigDecimal rightThighCm;
+    private BigDecimal leftCalfCm;
+    private BigDecimal rightCalfCm;
+
     private LocalDateTime createdAt;
 }
-

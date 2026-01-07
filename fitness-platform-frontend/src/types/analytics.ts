@@ -5,6 +5,18 @@ export interface WeightTrendData {
   movingAverage: number | null
   rateOfChange: number | null
   bodyFatPct: number | null
+  // Extended metrics
+  neckCm?: number
+  shouldersCm?: number
+  chestCm?: number
+  waistCm?: number
+  hipsCm?: number
+  leftBicepCm?: number
+  rightBicepCm?: number
+  leftThighCm?: number
+  rightThighCm?: number
+  leftCalfCm?: number
+  rightCalfCm?: number
 }
 
 export interface GoalProgress {
@@ -62,6 +74,8 @@ export interface PersonalRecord {
 export interface ProgressiveOverloadSuggestion {
   exerciseId: number
   exerciseName: string
+  muscleGroup: string
+  progressType: 'WEIGHT' | 'REPS' | 'SETS' | 'VOLUME'
   lastWeight: number
   suggestedWeight: number
   lastReps: number

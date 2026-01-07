@@ -18,5 +18,17 @@ public class WeightTrendDto {
     private BigDecimal movingAverage;
     private BigDecimal rateOfChange; // kg per week
     private BigDecimal bodyFatPct;
-}
 
+    // Extended Metrics
+    private BigDecimal neckCm;
+    private BigDecimal shouldersCm;
+    private BigDecimal chestCm;
+    private BigDecimal waistCm;
+    private BigDecimal hipsCm;
+    private BigDecimal leftBicepCm;
+    private BigDecimal rightBicepCm;
+    private BigDecimal leftThighCm;
+    private BigDecimal rightThighCm;
+    private BigDecimal leftCalfCm;
+    private BigDecimal rightCalfCm;
+}

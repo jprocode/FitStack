@@ -6,6 +6,18 @@ export interface BodyMetric {
   measurementDate: string
   notes: string | null
   createdAt: string
+  // Extended metrics
+  neckCm?: number
+  shouldersCm?: number
+  chestCm?: number
+  waistCm?: number
+  hipsCm?: number
+  leftBicepCm?: number
+  rightBicepCm?: number
+  leftThighCm?: number
+  rightThighCm?: number
+  leftCalfCm?: number
+  rightCalfCm?: number
 }
 
 export interface CreateMetricRequest {
@@ -13,6 +25,18 @@ export interface CreateMetricRequest {
   bodyFatPct?: number
   measurementDate: string
   notes?: string
+  // Extended metrics
+  neckCm?: number
+  shouldersCm?: number
+  chestCm?: number
+  waistCm?: number
+  hipsCm?: number
+  leftBicepCm?: number
+  rightBicepCm?: number
+  leftThighCm?: number
+  rightThighCm?: number
+  leftCalfCm?: number
+  rightCalfCm?: number
 }
 
 export interface Goal {

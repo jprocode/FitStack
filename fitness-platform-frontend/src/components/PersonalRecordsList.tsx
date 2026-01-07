@@ -123,7 +123,9 @@ export function PersonalRecordsList({ records }: PersonalRecordsListProps) {
                         <p className="text-xs text-muted-foreground">{record.muscleGroup}</p>
                       </div>
                       {record.isRecent && (
-                        <Flame className="h-4 w-4 text-orange-500" title="Recent PR!" />
+                        <span title="Recent PR!">
+                          <Flame className="h-4 w-4 text-orange-500" />
+                        </span>
                       )}
                     </div>
                   </td>
