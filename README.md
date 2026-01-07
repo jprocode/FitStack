@@ -5,9 +5,9 @@
 ![FitStack Logo](https://img.shields.io/badge/FitStack-Fitness%20Platform-10b981?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIyIDEyaC00bC0zIDlMOSAzbC0zIDloLTQiLz48L3N2Zz4=)
 
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?style=flat-square&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?style=flat-square&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -53,10 +53,10 @@ A full-stack microservices application for tracking workouts, AI-powered meal pl
 ### Prerequisites
 
 - Java 21 (LTS)
-- Node.js 18+
+- Node.js 22+ (LTS)
 - PostgreSQL 14+
 - Redis 7+
-- Maven 3.8+
+- Maven 3.9+
 
 ### 1. Clone the Repository
 
@@ -166,7 +166,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system design.
 | Technology | Purpose |
 |------------|---------|
 | Java 21 | Core language |
-| Spring Boot 3.2 | Application framework |
+| Spring Boot 3.4 | Application framework |
 | Spring Cloud Gateway | API Gateway |
 | Spring Cloud Netflix Eureka | Service discovery |
 | Spring Security + JWT | Authentication |
@@ -178,9 +178,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system design.
 ### Frontend
 | Technology | Purpose |
 |------------|---------|
-| React 18 | UI framework |
-| TypeScript | Type safety |
-| Vite | Build tool |
+| React 19 | UI framework |
+| TypeScript 5.7 | Type safety |
+| Vite 6 | Build tool |
 | TailwindCSS | Styling |
 | shadcn/ui | Component library |
 | Recharts | Data visualization |
