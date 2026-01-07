@@ -150,7 +150,7 @@ export default function NutritionDashboard() {
           </Button>
           <Button
             onClick={() => navigate('/nutrition/log')}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-primary hover:bg-primary/90"
           >
             <Plus className="h-4 w-4 mr-2" />
             Log Meal
@@ -319,7 +319,7 @@ export default function NutritionDashboard() {
                   </p>
                   <Button
                     onClick={() => navigate('/nutrition/log')}
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Log Your First Meal

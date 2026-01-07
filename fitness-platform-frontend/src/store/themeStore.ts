@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark' | 'pink' | 'system'
 
 interface ThemeState {
   theme: Theme
   setTheme: (theme: Theme) => void
-  resolvedTheme: 'light' | 'dark'
+  resolvedTheme: 'light' | 'dark' | 'pink'
 }
 
 const getSystemTheme = (): 'light' | 'dark' => {
@@ -14,11 +14,12 @@ const getSystemTheme = (): 'light' | 'dark' => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-const applyTheme = (theme: Theme) => {
+const applyTheme = (theme: Theme): 'light' | 'dark' | 'pink' => {
   const root = window.document.documentElement
+  // Pink is its own theme, not system-dependent
   const resolvedTheme = theme === 'system' ? getSystemTheme() : theme
   
-  root.classList.remove('light', 'dark')
+  root.classList.remove('light', 'dark', 'pink')
   root.classList.add(resolvedTheme)
   
   return resolvedTheme
@@ -56,10 +57,11 @@ if (typeof window !== 'undefined') {
     if (currentTheme === 'system') {
       const resolvedTheme = e.matches ? 'dark' : 'light'
       const root = window.document.documentElement
-      root.classList.remove('light', 'dark')
+      root.classList.remove('light', 'dark', 'pink')
       root.classList.add(resolvedTheme)
       useThemeStore.setState({ resolvedTheme })
     }
   })
 }
+
 

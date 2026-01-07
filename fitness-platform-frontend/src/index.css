@@ -62,6 +62,36 @@
     --chart-4: 262 83% 53%;
     --chart-5: 340 75% 50%;
   }
+
+  /* 💖 Pink Girly Theme */
+  .pink {
+    --background: 350 100% 98%;
+    --foreground: 340 30% 15%;
+    --card: 350 100% 99%;
+    --card-foreground: 340 30% 15%;
+    --popover: 350 100% 99%;
+    --popover-foreground: 340 30% 15%;
+    --primary: 330 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 340 40% 94%;
+    --secondary-foreground: 340 30% 15%;
+    --muted: 340 30% 92%;
+    --muted-foreground: 340 20% 40%;
+    --accent: 330 80% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 340 30% 88%;
+    --input: 340 30% 88%;
+    --ring: 330 80% 55%;
+    
+    /* Chart colors for pink mode - matching pink palette */
+    --chart-1: 330 80% 55%;
+    --chart-2: 280 70% 60%;
+    --chart-3: 350 70% 65%;
+    --chart-4: 310 60% 50%;
+    --chart-5: 0 70% 60%;
+  }
 }
 
 @layer base {
