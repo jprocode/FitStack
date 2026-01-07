@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { metricsApi } from '@/lib/api'
+import { useSettingsStore } from '@/store/settingsStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,11 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/use-toast'
 import { formatDate } from '@/lib/utils'
+import { kgToLbs, lbsToKg, formatWeight } from '@/lib/unitConversions'
 import { Loader2, Plus, Trash2, Scale, TrendingDown, TrendingUp } from 'lucide-react'
 import type { BodyMetric } from '@/types/metrics'
 
 const metricSchema = z.object({
-  weightKg: z.coerce.number().min(20).max(500),
+  weight: z.coerce.number().min(20).max(1000), // Adjusted max for lbs
   bodyFatPct: z.coerce.number().min(1).max(70).optional().or(z.literal('')),
   measurementDate: z.string().min(1, 'Date is required'),
   notes: z.string().optional(),
@@ -27,6 +29,7 @@ export default function BodyMetrics() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { unitSystem } = useSettingsStore()
   const { toast } = useToast()
 
   const {
@@ -59,8 +62,11 @@ export default function BodyMetrics() {
   const onSubmit = async (data: MetricForm) => {
     setIsSaving(true)
     try {
+      // Convert to kg if using imperial
+      const weightKg = unitSystem === 'metric' ? data.weight : lbsToKg(data.weight)
+
       await metricsApi.createMetric({
-        weightKg: data.weightKg,
+        weightKg,
         bodyFatPct: data.bodyFatPct || null,
         measurementDate: data.measurementDate,
         notes: data.notes || null,
@@ -110,6 +116,13 @@ export default function BodyMetrics() {
 
   const weightTrend = getWeightTrend()
 
+  // Helper to display weight difference correctly
+  const displayWeightDiff = (diffKg: number) => {
+    if (unitSystem === 'metric') return `${Math.abs(diffKg).toFixed(1)} kg`
+    const diffLbs = Math.abs(kgToLbs(diffKg))
+    return `${diffLbs.toFixed(1)} lbs`
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -132,16 +145,16 @@ export default function BodyMetrics() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="weightKg">Weight (kg) *</Label>
+                <Label htmlFor="weight">Weight ({unitSystem === 'metric' ? 'kg' : 'lbs'}) *</Label>
                 <Input
-                  id="weightKg"
+                  id="weight"
                   type="number"
                   step="0.1"
-                  placeholder="75.5"
-                  {...register('weightKg')}
+                  placeholder={unitSystem === 'metric' ? "75.5" : "166.4"}
+                  {...register('weight')}
                 />
-                {errors.weightKg && (
-                  <p className="text-sm text-destructive">{errors.weightKg.message}</p>
+                {errors.weight && (
+                  <p className="text-sm text-destructive">{errors.weight.message}</p>
                 )}
               </div>
 
@@ -198,7 +211,6 @@ export default function BodyMetrics() {
         </Dialog>
       </div>
 
-      {/* Summary Cards */}
       {metrics.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="glass">
@@ -207,17 +219,16 @@ export default function BodyMetrics() {
               <Scale className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics[0].weightKg} kg</div>
+              <div className="text-2xl font-bold">{formatWeight(metrics[0].weightKg, unitSystem)}</div>
               {weightTrend && (
-                <p className={`text-xs flex items-center gap-1 ${
-                  weightTrend.isUp ? 'text-destructive' : 'text-primary'
-                }`}>
+                <p className={`text-xs flex items-center gap-1 ${weightTrend.isUp ? 'text-destructive' : 'text-primary'
+                  }`}>
                   {weightTrend.isUp ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
-                  {Math.abs(weightTrend.diff).toFixed(1)} kg from last entry
+                  {displayWeightDiff(weightTrend.diff)} from last entry
                 </p>
               )}
             </CardContent>
@@ -251,7 +262,6 @@ export default function BodyMetrics() {
         </div>
       )}
 
-      {/* Metrics Table */}
       <Card className="glass">
         <CardHeader>
           <CardTitle>History</CardTitle>
@@ -290,7 +300,7 @@ export default function BodyMetrics() {
                   {metrics.map((metric) => (
                     <tr key={metric.id} className="border-b border-border/50 hover:bg-accent/5">
                       <td className="py-3 px-4">{formatDate(metric.measurementDate)}</td>
-                      <td className="py-3 px-4 font-medium">{metric.weightKg} kg</td>
+                      <td className="py-3 px-4 font-medium">{formatWeight(metric.weightKg, unitSystem)}</td>
                       <td className="py-3 px-4">
                         {metric.bodyFatPct ? `${metric.bodyFatPct}%` : '—'}
                       </td>

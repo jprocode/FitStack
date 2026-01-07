@@ -1,25 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useSettingsStore } from '@/store/settingsStore'
+import { formatWeight } from '@/lib/unitConversions'
 import { metricsApi, goalsApi, sessionApi } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { formatDate } from '@/lib/utils'
-import { 
-  Scale, 
-  Target, 
-  Dumbbell, 
-  TrendingUp, 
-  Plus, 
+import {
+  Scale,
+  Target,
+  Dumbbell,
+  TrendingUp,
+  Plus,
   Calendar,
-  Activity 
+  Activity
 } from 'lucide-react'
 import type { BodyMetric, Goal } from '@/types/metrics'
 import type { WorkoutSession } from '@/types/session'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
+  const { unitSystem } = useSettingsStore()
   const [latestMetric, setLatestMetric] = useState<BodyMetric | null>(null)
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSession[]>([])
@@ -73,7 +76,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {latestMetric?.weightKg ? `${latestMetric.weightKg} kg` : '—'}
+              {formatWeight(latestMetric?.weightKg, unitSystem)}
             </div>
             <p className="text-xs text-muted-foreground">
               {latestMetric ? `Last updated ${formatDate(latestMetric.measurementDate)}` : 'No data yet'}
@@ -199,7 +202,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       {goal.targetWeight && (
                         <span className="text-xs text-muted-foreground">
-                          Target: {goal.targetWeight} kg
+                          Target: {formatWeight(goal.targetWeight, unitSystem)}
                         </span>
                       )}
                       {goal.targetDate && (
@@ -239,11 +242,10 @@ export default function Dashboard() {
                       {formatDate(workout.startedAt)}
                     </p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    workout.status === 'COMPLETED' 
-                      ? 'bg-primary/10 text-primary' 
+                  <span className={`text-xs px-2 py-1 rounded-full ${workout.status === 'COMPLETED'
+                      ? 'bg-primary/10 text-primary'
                       : 'bg-muted text-muted-foreground'
-                  }`}>
+                    }`}>
                     {workout.status}
                   </span>
                 </div>

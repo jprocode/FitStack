@@ -3,12 +3,16 @@ import { Progress } from '@/components/ui/progress'
 import { Target, TrendingDown, TrendingUp, Dumbbell, Calendar } from 'lucide-react'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import type { GoalProgress } from '@/types/analytics'
+import { useSettingsStore } from '@/store/settingsStore'
+import { formatWeight } from '@/lib/unitConversions'
 
 interface GoalProgressCardProps {
   goal: GoalProgress
 }
 
 export function GoalProgressCard({ goal }: GoalProgressCardProps) {
+  const { unitSystem } = useSettingsStore()
+
   const getGoalIcon = (type: string) => {
     switch (type) {
       case 'WEIGHT_LOSS':
@@ -61,13 +65,12 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
             <span>{getGoalLabel(goal.goalType)}</span>
           </div>
           <span
-            className={`text-sm font-normal px-2 py-1 rounded-full ${
-              goal.status === 'ACTIVE'
+            className={`text-sm font-normal px-2 py-1 rounded-full ${goal.status === 'ACTIVE'
                 ? 'bg-primary/10 text-primary'
                 : goal.status === 'COMPLETED'
                   ? 'bg-emerald-500/10 text-emerald-500'
                   : 'bg-muted text-muted-foreground'
-            }`}
+              }`}
           >
             {goal.status}
           </span>
@@ -92,19 +95,19 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
           <div>
             <p className="text-xs text-muted-foreground">Start</p>
             <p className="text-sm font-medium">
-              {goal.startValue !== null ? `${goal.startValue.toFixed(1)} kg` : '—'}
+              {formatWeight(goal.startValue, unitSystem)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Current</p>
             <p className="text-sm font-medium">
-              {goal.currentValue !== null ? `${goal.currentValue.toFixed(1)} kg` : '—'}
+              {formatWeight(goal.currentValue, unitSystem)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Target</p>
             <p className="text-sm font-medium">
-              {goal.targetValue !== null ? `${goal.targetValue.toFixed(1)} kg` : '—'}
+              {formatWeight(goal.targetValue, unitSystem)}
             </p>
           </div>
         </div>
@@ -118,13 +121,12 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
             </div>
             {daysText && (
               <span
-                className={`text-xs ${
-                  goal.daysRemaining !== null && goal.daysRemaining < 0
+                className={`text-xs ${goal.daysRemaining !== null && goal.daysRemaining < 0
                     ? 'text-red-500'
                     : goal.daysRemaining !== null && goal.daysRemaining <= 7
                       ? 'text-amber-500'
                       : 'text-muted-foreground'
-                }`}
+                  }`}
               >
                 {daysText}
               </span>

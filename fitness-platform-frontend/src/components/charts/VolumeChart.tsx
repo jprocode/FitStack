@@ -9,12 +9,16 @@ import {
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import type { VolumeProgressionData } from '@/types/analytics'
+import { useSettingsStore } from '@/store/settingsStore'
+import { kgToLbs } from '@/lib/unitConversions'
 
 interface VolumeChartProps {
   data: VolumeProgressionData[]
 }
 
 export function VolumeChart({ data }: VolumeChartProps) {
+  const { unitSystem } = useSettingsStore()
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-[300px] text-muted-foreground">
@@ -23,12 +27,16 @@ export function VolumeChart({ data }: VolumeChartProps) {
     )
   }
 
-  const formattedData = data.map((item) => ({
-    ...item,
-    date: format(parseISO(item.date), 'MMM d'),
-    fullDate: format(parseISO(item.date), 'MMM d, yyyy'),
-    volumeFormatted: item.totalVolume.toLocaleString(),
-  }))
+  const formattedData = data.map((item) => {
+    const volume = unitSystem === 'metric' ? item.totalVolume : kgToLbs(item.totalVolume)
+    return {
+      ...item,
+      date: format(parseISO(item.date), 'MMM d'),
+      fullDate: format(parseISO(item.date), 'MMM d, yyyy'),
+      volumeFormatted: volume.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+      displayVolume: volume,
+    }
+  })
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -38,7 +46,9 @@ export function VolumeChart({ data }: VolumeChartProps) {
           <p className="font-medium mb-2">{item.fullDate}</p>
           <p className="text-sm">
             <span className="text-muted-foreground">Volume: </span>
-            <span className="font-medium">{item.volumeFormatted} kg</span>
+            <span className="font-medium">
+              {item.volumeFormatted} {unitSystem === 'metric' ? 'kg' : 'lbs'}
+            </span>
           </p>
           <p className="text-sm">
             <span className="text-muted-foreground">Sets: </span>
@@ -80,7 +90,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
         <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"
-          dataKey="totalVolume"
+          dataKey="displayVolume"
           stroke="hsl(var(--chart-1))"
           fill="url(#volumeGradient)"
           strokeWidth={2}

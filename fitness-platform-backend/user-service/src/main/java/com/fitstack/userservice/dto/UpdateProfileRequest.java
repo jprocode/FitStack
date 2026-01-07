@@ -18,7 +18,7 @@ import java.time.LocalDate;
 public class UpdateProfileRequest {
 
     private String firstName;
-    
+
     private String lastName;
 
     @DecimalMin(value = "50.0", message = "Height must be at least 50 cm")
@@ -31,5 +31,6 @@ public class UpdateProfileRequest {
     private String gender;
 
     private String activityLevel;
-}
 
+    private String preferredUnit;
+}

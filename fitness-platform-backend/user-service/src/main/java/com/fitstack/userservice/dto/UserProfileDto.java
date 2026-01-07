@@ -24,7 +24,7 @@ public class UserProfileDto {
     private LocalDate birthDate;
     private String gender;
     private String activityLevel;
+    private String preferredUnit;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

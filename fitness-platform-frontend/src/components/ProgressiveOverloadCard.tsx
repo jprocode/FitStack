@@ -2,12 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { TrendingUp, Dumbbell, ArrowRight, Zap, Target } from 'lucide-react'
 import type { ProgressiveOverloadSuggestion } from '@/types/analytics'
+import { useSettingsStore } from '@/store/settingsStore'
+import { formatWeight } from '@/lib/unitConversions'
 
 interface ProgressiveOverloadCardProps {
   suggestions: ProgressiveOverloadSuggestion[]
 }
 
 export function ProgressiveOverloadCard({ suggestions }: ProgressiveOverloadCardProps) {
+  const { unitSystem } = useSettingsStore()
+
   if (!suggestions || suggestions.length === 0) {
     return (
       <Card className="glass">
@@ -78,14 +82,14 @@ export function ProgressiveOverloadCard({ suggestions }: ProgressiveOverloadCard
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground mb-1">Last</p>
                   <p className="text-sm font-medium">
-                    {suggestion.lastWeight.toFixed(1)} kg × {suggestion.lastReps} reps
+                    {formatWeight(suggestion.lastWeight, unitSystem)} × {suggestion.lastReps} reps
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground mb-1">Suggested</p>
                   <p className="text-sm font-medium text-primary">
-                    {suggestion.suggestedWeight.toFixed(1)} kg × {suggestion.suggestedReps} reps
+                    {formatWeight(suggestion.suggestedWeight, unitSystem)} × {suggestion.suggestedReps} reps
                   </p>
                 </div>
               </div>

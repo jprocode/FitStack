@@ -4,14 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { userApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
+import { useSettingsStore } from '@/store/settingsStore'
+import { UnitToggle } from '@/components/UnitToggle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2, User } from 'lucide-react'
+import { Loader2, User, Settings as SettingsIcon } from 'lucide-react'
 import type { UserProfile } from '@/types/auth'
+import { cmToFeetInches, feetInchesToCm } from '@/lib/unitConversions'
 
 const profileSchema = z.object({
   firstName: z.string().optional(),
@@ -43,7 +46,12 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const { updateUser } = useAuthStore()
+  const { unitSystem } = useSettingsStore()
   const { toast } = useToast()
+
+  // Local state for Imperial height input
+  const [heightFt, setHeightFt] = useState('')
+  const [heightIn, setHeightIn] = useState('')
 
   const {
     register,
@@ -54,6 +62,28 @@ export default function Profile() {
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
   })
+
+  // sync heightCm changes to local Ft/In state for display
+  const heightCm = watch('heightCm')
+
+  useEffect(() => {
+    if (heightCm && !isNaN(Number(heightCm))) {
+      const { feet, inches } = cmToFeetInches(Number(heightCm))
+      setHeightFt(feet.toString())
+      setHeightIn(inches.toString())
+    }
+  }, [heightCm])
+
+  // Handle imperial height changes
+  const handleImperialHeightChange = (ft: string, inc: string) => {
+    setHeightFt(ft)
+    setHeightIn(inc)
+
+    if (ft && inc) {
+      const cm = feetInchesToCm(Number(ft), Number(inc))
+      setValue('heightCm', cm, { shouldDirty: true })
+    }
+  }
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -85,6 +115,7 @@ export default function Profile() {
         birthDate: data.birthDate || null,
         gender: data.gender || null,
         activityLevel: data.activityLevel || null,
+        // We could send preferredUnit here if we added it to the form/DTO usage in frontend API call
       })
       const profile: UserProfile = response.data
       updateUser({ firstName: profile.firstName, lastName: profile.lastName })
@@ -120,6 +151,33 @@ export default function Profile() {
         </p>
       </div>
 
+      {/* Preferences Card */}
+      <Card className="glass">
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <SettingsIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle>Preferences</CardTitle>
+              <CardDescription>Customize your experience</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
+            <div className="space-y-0.5">
+              <Label className="text-base">Unit System</Label>
+              <p className="text-sm text-muted-foreground">
+                Choose between Metric (kg/cm) and Imperial (lbs/in)
+              </p>
+            </div>
+            <UnitToggle />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Personal Info Card */}
       <Card className="glass">
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -147,13 +205,39 @@ export default function Profile() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="heightCm">Height (cm)</Label>
-                <Input
-                  id="heightCm"
-                  type="number"
-                  placeholder="175"
-                  {...register('heightCm')}
-                />
+                <Label>Height</Label>
+                {unitSystem === 'metric' ? (
+                  <div className="relative">
+                    <Input
+                      id="heightCm"
+                      type="number"
+                      placeholder="175"
+                      {...register('heightCm')}
+                    />
+                    <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">cm</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        placeholder="5"
+                        value={heightFt}
+                        onChange={(e) => handleImperialHeightChange(e.target.value, heightIn)}
+                      />
+                      <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">ft</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={heightIn}
+                        onChange={(e) => handleImperialHeightChange(heightFt, e.target.value)}
+                      />
+                      <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">in</span>
+                    </div>
+                  </div>
+                )}
                 {errors.heightCm && (
                   <p className="text-sm text-destructive">{errors.heightCm.message}</p>
                 )}
@@ -219,4 +303,5 @@ export default function Profile() {
     </div>
   )
 }
+
 

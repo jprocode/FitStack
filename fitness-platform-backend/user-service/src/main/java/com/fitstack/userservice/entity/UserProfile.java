@@ -40,6 +40,10 @@ public class UserProfile {
     @Column(name = "activity_level", length = 50)
     private String activityLevel;
 
+    @Column(name = "preferred_unit", length = 20)
+    @Builder.Default
+    private String preferredUnit = "METRIC";
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -48,4 +52,3 @@ public class UserProfile {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
-

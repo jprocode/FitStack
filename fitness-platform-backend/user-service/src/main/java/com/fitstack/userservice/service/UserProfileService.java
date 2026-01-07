@@ -58,6 +58,9 @@ public class UserProfileService {
         if (request.getActivityLevel() != null) {
             profile.setActivityLevel(request.getActivityLevel());
         }
+        if (request.getPreferredUnit() != null) {
+            profile.setPreferredUnit(request.getPreferredUnit());
+        }
 
         profile = userProfileRepository.save(profile);
 
@@ -77,6 +80,7 @@ public class UserProfileService {
                     .birthDate(profile.getBirthDate())
                     .gender(profile.getGender())
                     .activityLevel(profile.getActivityLevel())
+                    .preferredUnit(profile.getPreferredUnit())
                     .createdAt(profile.getCreatedAt())
                     .updatedAt(profile.getUpdatedAt());
         }
@@ -84,4 +88,3 @@ public class UserProfileService {
         return builder.build();
     }
 }
-

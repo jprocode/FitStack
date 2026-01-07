@@ -12,6 +12,8 @@ import {
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import type { WeightTrendData } from '@/types/analytics'
+import { useSettingsStore } from '@/store/settingsStore'
+import { kgToLbs } from '@/lib/unitConversions'
 
 interface WeightTrendChartProps {
   data: WeightTrendData[]
@@ -24,6 +26,8 @@ export function WeightTrendChart({
   showMovingAverage = true,
   showBodyFat = false,
 }: WeightTrendChartProps) {
+  const { unitSystem } = useSettingsStore()
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-[300px] text-muted-foreground">
@@ -36,6 +40,11 @@ export function WeightTrendChart({
     ...item,
     date: format(parseISO(item.date), 'MMM d'),
     fullDate: format(parseISO(item.date), 'MMM d, yyyy'),
+    // Create display values based on unit system
+    displayWeight: unitSystem === 'metric' ? item.weightKg : kgToLbs(item.weightKg),
+    displayMovingAverage: item.movingAverage
+      ? (unitSystem === 'metric' ? item.movingAverage : kgToLbs(item.movingAverage))
+      : null,
   }))
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -45,7 +54,7 @@ export function WeightTrendChart({
           <p className="font-medium mb-2">{payload[0]?.payload?.fullDate}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {entry.value?.toFixed(1)} {entry.name.includes('Fat') ? '%' : 'kg'}
+              {entry.name}: {entry.value?.toFixed(1)} {entry.name.includes('Fat') ? '%' : (unitSystem === 'metric' ? 'kg' : 'lbs')}
             </p>
           ))}
         </div>
@@ -77,7 +86,12 @@ export function WeightTrendChart({
           className="text-muted-foreground"
           tickLine={false}
           axisLine={false}
-          label={{ value: 'kg', angle: -90, position: 'insideLeft', fontSize: 12 }}
+          label={{
+            value: unitSystem === 'metric' ? 'kg' : 'lbs',
+            angle: -90,
+            position: 'insideLeft',
+            fontSize: 12
+          }}
         />
         {showBodyFat && (
           <YAxis
@@ -96,7 +110,7 @@ export function WeightTrendChart({
         <Area
           yAxisId="weight"
           type="monotone"
-          dataKey="weightKg"
+          dataKey="displayWeight"
           name="Weight"
           stroke="hsl(var(--primary))"
           fill="url(#weightGradient)"
@@ -108,7 +122,7 @@ export function WeightTrendChart({
           <Line
             yAxisId="weight"
             type="monotone"
-            dataKey="movingAverage"
+            dataKey="displayMovingAverage"
             name="7-Day Average"
             stroke="hsl(var(--chart-2))"
             strokeWidth={2}

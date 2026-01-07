@@ -14,6 +14,8 @@ import { PersonalRecordsList } from '@/components/PersonalRecordsList'
 import { ProgressiveOverloadCard } from '@/components/ProgressiveOverloadCard'
 import { BarChart3, TrendingUp, Trophy, Zap, Dumbbell, Calendar } from 'lucide-react'
 import { format, subDays, subYears } from 'date-fns'
+import { useSettingsStore } from '@/store/settingsStore'
+import { kgToLbs } from '@/lib/unitConversions'
 import type {
   WorkoutFrequencyData,
   VolumeProgressionData,
@@ -30,6 +32,7 @@ export default function WorkoutAnalytics() {
   const [period, setPeriod] = useState('90d')
   const [selectedExercise, setSelectedExercise] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(true)
+  const { unitSystem } = useSettingsStore()
 
   useEffect(() => {
     fetchAnalytics()
@@ -101,7 +104,10 @@ export default function WorkoutAnalytics() {
   const totalWorkouts = frequency.reduce((sum, f) => sum + f.workoutCount, 0)
   const avgPerWeek =
     frequency.length > 0 ? (totalWorkouts / frequency.length).toFixed(1) : '0'
-  const totalVolume = volume.reduce((sum, v) => sum + v.totalVolume, 0)
+
+  const rawTotalVolume = volume.reduce((sum, v) => sum + v.totalVolume, 0)
+  const totalVolume = unitSystem === 'metric' ? rawTotalVolume : kgToLbs(rawTotalVolume)
+
   const recentPRs = personalRecords.filter((pr) => pr.isRecent).length
 
   return (
@@ -154,7 +160,9 @@ export default function WorkoutAnalytics() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(totalVolume / 1000).toFixed(0)}k kg</div>
+            <div className="text-2xl font-bold">
+              {(totalVolume / 1000).toFixed(0)}k {unitSystem === 'metric' ? 'kg' : 'lbs'}
+            </div>
             <p className="text-xs text-muted-foreground">Weight × Reps lifted</p>
           </CardContent>
         </Card>

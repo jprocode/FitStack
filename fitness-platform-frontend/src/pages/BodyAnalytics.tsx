@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import { format, subDays, subMonths, subYears } from 'date-fns'
 import type { WeightTrendData, GoalProgress, MetricsStats } from '@/types/analytics'
+import { useSettingsStore } from '@/store/settingsStore'
+import { formatWeight, kgToLbs } from '@/lib/unitConversions'
 
 export default function BodyAnalytics() {
   const [weightTrend, setWeightTrend] = useState<WeightTrendData[]>([])
@@ -34,6 +36,7 @@ export default function BodyAnalytics() {
   const [isLoading, setIsLoading] = useState(true)
   const [showMovingAverage, setShowMovingAverage] = useState(true)
   const [showBodyFat, setShowBodyFat] = useState(false)
+  const { unitSystem } = useSettingsStore()
 
   useEffect(() => {
     fetchAnalytics()
@@ -122,10 +125,13 @@ export default function BodyAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.averageWeight ? `${stats.averageWeight.toFixed(1)} kg` : '—'}
+                {formatWeight(stats.averageWeight, unitSystem)}
               </div>
               <p className="text-xs text-muted-foreground">
-                Range: {stats.minWeight?.toFixed(1)} - {stats.maxWeight?.toFixed(1)} kg
+                Range: {unitSystem === 'metric'
+                  ? `${stats.minWeight?.toFixed(1)} - ${stats.maxWeight?.toFixed(1)} kg`
+                  : `${kgToLbs(stats.minWeight || 0).toFixed(1)} - ${kgToLbs(stats.maxWeight || 0).toFixed(1)} lbs`
+                }
               </p>
             </CardContent>
           </Card>
@@ -136,10 +142,17 @@ export default function BodyAnalytics() {
               {getTrendIcon(stats.weightChange)}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatChange(stats.weightChange)}</div>
+              <div className="text-2xl font-bold">
+                {stats.weightChange !== null
+                  ? (stats.weightChange > 0 ? '+' : '') + formatWeight(stats.weightChange, unitSystem)
+                  : '—'}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {stats.ratePerWeek !== null
-                  ? `${stats.ratePerWeek > 0 ? '+' : ''}${stats.ratePerWeek.toFixed(2)} kg/week`
+                  ? `${stats.ratePerWeek > 0 ? '+' : ''}${unitSystem === 'metric'
+                    ? `${stats.ratePerWeek.toFixed(2)} kg`
+                    : `${kgToLbs(stats.ratePerWeek).toFixed(2)} lbs`
+                  }/week`
                   : 'Over selected period'}
               </p>
             </CardContent>

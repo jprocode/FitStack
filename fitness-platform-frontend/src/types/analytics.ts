@@ -50,10 +50,13 @@ export interface VolumeProgressionData {
 export interface PersonalRecord {
   exerciseId: number
   exerciseName: string
+  muscleGroup: string
   maxWeight: number
   maxReps: number
   maxVolume: number
+  estimatedOneRepMax: number | null
   achievedAt: string
+  isRecent: boolean
 }
 
 export interface ProgressiveOverloadSuggestion {
