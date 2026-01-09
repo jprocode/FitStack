@@ -135,10 +135,10 @@ export default function Dashboard() {
             <CardDescription>Begin a new workout session</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link to="/templates">
+            <Link to="/workout/start">
               <Button className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Choose Template
+                Start Today's Workout
               </Button>
             </Link>
           </CardContent>
@@ -243,8 +243,8 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${workout.status === 'COMPLETED'
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
                     }`}>
                     {workout.status}
                   </span>

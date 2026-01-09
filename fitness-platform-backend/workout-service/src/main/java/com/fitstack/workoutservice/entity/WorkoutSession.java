@@ -43,6 +43,9 @@ public class WorkoutSession {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "plan_day_id")
+    private Long planDayId; // Optional: tracks which plan day this session came from
+
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<WorkoutSet> sets = new ArrayList<>();
@@ -53,4 +56,3 @@ public class WorkoutSession {
         CANCELLED
     }
 }
-

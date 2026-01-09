@@ -26,6 +26,7 @@ import BodyAnalytics from '@/pages/BodyAnalytics'
 import WorkoutAnalytics from '@/pages/WorkoutAnalytics'
 import WorkoutPlanList from '@/pages/WorkoutPlanList'
 import WorkoutPlanBuilder from '@/pages/WorkoutPlanBuilder'
+import StartWorkout from '@/pages/StartWorkout'
 import { Toaster } from '@/components/ui/toaster'
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
             <Route path="/templates/new" element={<TemplateBuilder />} />
             <Route path="/templates/:id" element={<TemplateDetail />} />
             <Route path="/templates/:id/edit" element={<TemplateBuilder />} />
+            <Route path="/workout/start" element={<StartWorkout />} />
             <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
             <Route path="/history" element={<WorkoutHistory />} />
             {/* Workout Plan Routes */}

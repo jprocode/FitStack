@@ -3,8 +3,12 @@ export type SessionStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 export interface WorkoutSession {
   id: number
   userId: number
-  templateId: number
+  templateId?: number
   template?: import('./workout').WorkoutTemplate
+  // Plan-based session fields
+  planDayId?: number
+  planDayName?: string
+  planDayExercises?: import('./workout').PlanDayExercise[]
   startedAt: string
   completedAt: string | null
   status: SessionStatus

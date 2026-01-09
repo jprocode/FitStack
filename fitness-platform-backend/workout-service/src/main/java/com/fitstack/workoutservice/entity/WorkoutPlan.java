@@ -45,6 +45,14 @@ public class WorkoutPlan {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "is_primary")
+    @Builder.Default
+    private Boolean isPrimary = false;
+
+    @Column(name = "last_completed_day")
+    @Builder.Default
+    private Integer lastCompletedDay = 0;
+
     @OneToMany(mappedBy = "workoutPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     @Builder.Default

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,7 +70,7 @@ public class WorkoutPlanService {
     public WorkoutPlanDto updatePlan(Long id, Long userId, CreatePlanRequest request) {
         log.info("Updating workout plan {} for user: {}", id, userId);
 
-        WorkoutPlan plan = planRepository.findByIdAndUserId(id, userId)
+        WorkoutPlan plan = planRepository.findByIdAndUserIdWithDays(id, userId)
                 .orElseThrow(() -> new NotFoundException("Workout plan not found"));
 
         plan.setName(request.getName());
@@ -78,7 +79,21 @@ public class WorkoutPlanService {
             plan.setPlanType(WorkoutPlan.PlanType.valueOf(request.getPlanType()));
         }
 
+        // Update days if provided
+        if (request.getDays() != null) {
+            // Clear existing days (cascade will delete exercises too)
+            plan.getDays().clear();
+
+            // Add new days with exercises
+            for (int i = 0; i < request.getDays().size(); i++) {
+                CreatePlanDayRequest dayReq = request.getDays().get(i);
+                WorkoutPlanDay day = createDayEntity(plan, dayReq, i);
+                plan.getDays().add(day);
+            }
+        }
+
         WorkoutPlan saved = planRepository.save(plan);
+        log.info("Updated workout plan with id: {}, days: {}", saved.getId(), saved.getDays().size());
         return toDtoWithDays(saved);
     }
 
@@ -91,6 +106,35 @@ public class WorkoutPlanService {
         }
 
         planRepository.deleteById(id);
+    }
+
+    /**
+     * Set a plan as the user's primary plan.
+     * Clears any existing primary plan for the user first.
+     */
+    @Transactional
+    public WorkoutPlanDto setPrimaryPlan(Long planId, Long userId) {
+        log.info("Setting plan {} as primary for user: {}", planId, userId);
+
+        // Clear any existing primary plan
+        planRepository.clearPrimaryForUser(userId);
+
+        // Set the new primary plan
+        WorkoutPlan plan = planRepository.findByIdAndUserId(planId, userId)
+                .orElseThrow(() -> new NotFoundException("Workout plan not found"));
+        plan.setIsPrimary(true);
+
+        WorkoutPlan saved = planRepository.save(plan);
+        return toDtoWithDays(saved);
+    }
+
+    /**
+     * Get the user's primary workout plan with all days and exercises.
+     */
+    public Optional<WorkoutPlanDto> getPrimaryPlan(Long userId) {
+        log.info("Getting primary plan for user: {}", userId);
+        return planRepository.findPrimaryWithDaysAndExercises(userId)
+                .map(this::toDtoWithDays);
     }
 
     @Transactional
@@ -196,6 +240,8 @@ public class WorkoutPlanService {
                 .description(plan.getDescription())
                 .planType(plan.getPlanType().name())
                 .isActive(plan.getIsActive())
+                .isPrimary(plan.getIsPrimary())
+                .lastCompletedDay(plan.getLastCompletedDay())
                 .createdAt(plan.getCreatedAt())
                 .updatedAt(plan.getUpdatedAt())
                 .build();

@@ -18,10 +18,14 @@ public class WorkoutSessionDto {
     private Long userId;
     private Long templateId;
     private WorkoutTemplateDto template;
+    // Plan-based session fields
+    private Long planDayId;
+    private String planDayName;
+    private List<PlanDayExerciseDto> planDayExercises;
+    // Timestamps and status
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
     private WorkoutSession.SessionStatus status;
     private String notes;
     private List<WorkoutSetDto> sets;
 }
-

@@ -13,6 +13,7 @@ import {
     Edit,
     Dumbbell,
     ChevronRight,
+    Star,
 } from 'lucide-react'
 
 interface WorkoutPlan {
@@ -21,6 +22,8 @@ interface WorkoutPlan {
     description?: string
     planType: 'WEEKLY' | 'NUMBERED'
     isActive: boolean
+    isPrimary?: boolean
+    lastCompletedDay?: number
     days?: WorkoutPlanDay[]
     createdAt: string
 }
@@ -39,6 +42,7 @@ export default function WorkoutPlanList() {
     const [plans, setPlans] = useState<WorkoutPlan[]>([])
     const [loading, setLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<number | null>(null)
+    const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null)
 
     const fetchPlans = async () => {
         setLoading(true)
@@ -87,6 +91,32 @@ export default function WorkoutPlanList() {
             return identifier.charAt(0) + identifier.slice(1).toLowerCase()
         }
         return `Day ${identifier}`
+    }
+
+    const handleSetPrimary = async (id: number, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setSettingPrimaryId(id)
+        try {
+            await workoutPlanApi.setPrimary(id)
+            // Update local state to reflect the change
+            setPlans(plans.map(p => ({
+                ...p,
+                isPrimary: p.id === id
+            })))
+            toast({
+                title: 'Primary plan set',
+                description: 'This plan will now be used for your daily workouts.',
+            })
+        } catch (error) {
+            console.error('Failed to set primary:', error)
+            toast({
+                title: 'Error',
+                description: 'Failed to set primary plan',
+                variant: 'destructive',
+            })
+        } finally {
+            setSettingPrimaryId(null)
+        }
     }
 
     return (
@@ -158,6 +188,11 @@ export default function WorkoutPlanList() {
                                                     </>
                                                 )}
                                             </Badge>
+                                            {plan.isPrimary && (
+                                                <Badge variant="outline" className="border-primary text-primary">
+                                                    Primary
+                                                </Badge>
+                                            )}
                                         </div>
                                         {plan.description && (
                                             <p className="text-sm text-muted-foreground mb-2">
@@ -183,6 +218,16 @@ export default function WorkoutPlanList() {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => handleSetPrimary(plan.id, e)}
+                                            disabled={settingPrimaryId === plan.id || plan.isPrimary}
+                                            className={plan.isPrimary ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}
+                                            title={plan.isPrimary ? 'Primary plan' : 'Set as primary'}
+                                        >
+                                            <Star className={`h-4 w-4 ${plan.isPrimary ? 'fill-current' : ''}`} />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"

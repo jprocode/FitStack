@@ -21,6 +21,7 @@ public class WorkoutSessionService {
     private final WorkoutSetRepository setRepository;
     private final WorkoutTemplateRepository templateRepository;
     private final ExerciseRepository exerciseRepository;
+    private final WorkoutPlanDayRepository planDayRepository;
     private final WorkoutTemplateService templateService;
     private final ExerciseService exerciseService;
 
@@ -38,6 +39,26 @@ public class WorkoutSessionService {
 
         session = sessionRepository.save(session);
         return toDto(session);
+    }
+
+    /**
+     * Start a workout session from a workout plan day.
+     * This is the new flow for the integrated workout experience.
+     */
+    @Transactional
+    public WorkoutSessionDto startSessionFromPlan(Long userId, Long planDayId) {
+        WorkoutPlanDay planDay = planDayRepository.findByIdWithExercises(planDayId)
+                .orElseThrow(() -> new NotFoundException("Workout day not found"));
+
+        WorkoutSession session = WorkoutSession.builder()
+                .userId(userId)
+                .startedAt(LocalDateTime.now())
+                .status(WorkoutSession.SessionStatus.IN_PROGRESS)
+                .planDayId(planDayId)
+                .build();
+
+        session = sessionRepository.save(session);
+        return toDtoWithPlanDay(session, planDay);
     }
 
     @Transactional
@@ -99,7 +120,7 @@ public class WorkoutSessionService {
 
     private WorkoutSessionDto toDto(WorkoutSession session) {
         List<WorkoutSet> sets = setRepository.findBySessionIdOrderByCompletedAtAsc(session.getId());
-        
+
         return WorkoutSessionDto.builder()
                 .id(session.getId())
                 .userId(session.getUserId())
@@ -110,6 +131,35 @@ public class WorkoutSessionService {
                 .status(session.getStatus())
                 .notes(session.getNotes())
                 .sets(sets.stream().map(this::toSetDto).collect(Collectors.toList()))
+                .build();
+    }
+
+    private WorkoutSessionDto toDtoWithPlanDay(WorkoutSession session, WorkoutPlanDay planDay) {
+        return WorkoutSessionDto.builder()
+                .id(session.getId())
+                .userId(session.getUserId())
+                .planDayId(session.getPlanDayId())
+                .planDayName(planDay.getName() != null ? planDay.getName() : "Day " + planDay.getDayIdentifier())
+                .planDayExercises(planDay.getExercises().stream()
+                        .map(this::toPlanExerciseDto)
+                        .collect(Collectors.toList()))
+                .startedAt(session.getStartedAt())
+                .status(session.getStatus())
+                .sets(List.of())
+                .build();
+    }
+
+    private PlanDayExerciseDto toPlanExerciseDto(WorkoutPlanDayExercise ex) {
+        return PlanDayExerciseDto.builder()
+                .id(ex.getId())
+                .exerciseId(ex.getExercise().getId())
+                .exerciseName(ex.getExercise().getName())
+                .muscleGroup(ex.getExercise().getMuscleGroup())
+                .orderIndex(ex.getOrderIndex())
+                .targetSets(ex.getTargetSets())
+                .targetReps(ex.getTargetReps())
+                .restSeconds(ex.getRestSeconds())
+                .notes(ex.getNotes())
                 .build();
     }
 
@@ -126,4 +176,3 @@ public class WorkoutSessionService {
                 .build();
     }
 }
-

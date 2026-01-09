@@ -97,11 +97,16 @@ export const workoutPlanApi = {
   updateDay: (planId: number, dayId: number, data: Record<string, unknown>) =>
     api.put(`/workouts/plans/${planId}/days/${dayId}`, data),
   deleteDay: (planId: number, dayId: number) => api.delete(`/workouts/plans/${planId}/days/${dayId}`),
+  // Primary plan methods
+  setPrimary: (id: number) => api.put(`/workouts/plans/${id}/set-primary`),
+  getPrimary: () => api.get('/workouts/plans/primary'),
+  getTodaysWorkout: () => api.get('/workouts/plans/primary/today'),
 }
 
 // Session API
 export const sessionApi = {
   startSession: (data: { templateId: number }) => api.post('/workouts/sessions', data),
+  startFromPlan: (planDayId: number) => api.post('/workouts/sessions/start-from-plan', { planDayId }),
   getSession: (id: number) => api.get(`/workouts/sessions/${id}`),
   logSet: (sessionId: number, data: Record<string, unknown>) =>
     api.post(`/workouts/sessions/${sessionId}/sets`, data),

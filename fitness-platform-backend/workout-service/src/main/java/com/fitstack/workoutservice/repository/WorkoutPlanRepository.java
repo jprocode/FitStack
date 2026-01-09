@@ -2,6 +2,7 @@ package com.fitstack.workoutservice.repository;
 
 import com.fitstack.workoutservice.entity.WorkoutPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,4 +26,18 @@ public interface WorkoutPlanRepository extends JpaRepository<WorkoutPlan, Long> 
     Optional<WorkoutPlan> findByIdAndUserId(Long id, Long userId);
 
     List<WorkoutPlan> findByUserIdAndIsActiveTrue(Long userId);
+
+    // Primary plan queries
+    Optional<WorkoutPlan> findByUserIdAndIsPrimaryTrue(Long userId);
+
+    @Query("SELECT wp FROM WorkoutPlan wp " +
+            "LEFT JOIN FETCH wp.days d " +
+            "LEFT JOIN FETCH d.exercises e " +
+            "LEFT JOIN FETCH e.exercise " +
+            "WHERE wp.userId = :userId AND wp.isPrimary = true")
+    Optional<WorkoutPlan> findPrimaryWithDaysAndExercises(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("UPDATE WorkoutPlan wp SET wp.isPrimary = false WHERE wp.userId = :userId AND wp.isPrimary = true")
+    void clearPrimaryForUser(@Param("userId") Long userId);
 }

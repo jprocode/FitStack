@@ -21,18 +21,25 @@ public class WorkoutSessionController {
     @PostMapping("/sessions")
     public ResponseEntity<WorkoutSessionDto> startSession(
             HttpServletRequest request,
-            @Valid @RequestBody StartSessionRequest startRequest
-    ) {
+            @Valid @RequestBody StartSessionRequest startRequest) {
         Long userId = getUserId(request);
         WorkoutSessionDto session = sessionService.startSession(userId, startRequest);
+        return new ResponseEntity<>(session, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/sessions/start-from-plan")
+    public ResponseEntity<WorkoutSessionDto> startSessionFromPlan(
+            HttpServletRequest request,
+            @Valid @RequestBody StartSessionFromPlanRequest startRequest) {
+        Long userId = getUserId(request);
+        WorkoutSessionDto session = sessionService.startSessionFromPlan(userId, startRequest.getPlanDayId());
         return new ResponseEntity<>(session, HttpStatus.CREATED);
     }
 
     @GetMapping("/sessions/{id}")
     public ResponseEntity<WorkoutSessionDto> getSession(
             HttpServletRequest request,
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         Long userId = getUserId(request);
         return ResponseEntity.ok(sessionService.getSession(userId, id));
     }
@@ -41,8 +48,7 @@ public class WorkoutSessionController {
     public ResponseEntity<WorkoutSetDto> logSet(
             HttpServletRequest request,
             @PathVariable Long id,
-            @Valid @RequestBody LogSetRequest logRequest
-    ) {
+            @Valid @RequestBody LogSetRequest logRequest) {
         Long userId = getUserId(request);
         WorkoutSetDto set = sessionService.logSet(userId, id, logRequest);
         return new ResponseEntity<>(set, HttpStatus.CREATED);
@@ -52,8 +58,7 @@ public class WorkoutSessionController {
     public ResponseEntity<WorkoutSessionDto> completeSession(
             HttpServletRequest request,
             @PathVariable Long id,
-            @RequestBody(required = false) CompleteSessionRequest completeRequest
-    ) {
+            @RequestBody(required = false) CompleteSessionRequest completeRequest) {
         Long userId = getUserId(request);
         return ResponseEntity.ok(sessionService.completeSession(userId, id, completeRequest));
     }
@@ -73,4 +78,3 @@ public class WorkoutSessionController {
         return userId != null ? (Long) userId : null;
     }
 }
-

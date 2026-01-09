@@ -46,7 +46,25 @@ export default function ActiveWorkout() {
       const data: WorkoutSession = response.data
       setSession(data)
 
-      if (data.template?.exercises) {
+      // Handle both plan-based and template-based sessions
+      if (data.planDayExercises && data.planDayExercises.length > 0) {
+        // Plan-based session
+        const exerciseStates: ExerciseState[] = data.planDayExercises.map((pe) => ({
+          exerciseId: pe.exerciseId,
+          name: pe.exerciseName,
+          targetSets: pe.targetSets,
+          targetReps: typeof pe.targetReps === 'string' ? parseInt(pe.targetReps.split('-')[0]) || 10 : pe.targetReps,
+          targetWeight: null,
+          completedSets: data.sets.filter((s) => s.exerciseId === pe.exerciseId),
+        }))
+        setExercises(exerciseStates)
+
+        if (exerciseStates.length > 0) {
+          setReps(exerciseStates[0].targetReps)
+          setWeight(0)
+        }
+      } else if (data.template?.exercises) {
+        // Template-based session (legacy)
         const exerciseStates: ExerciseState[] = data.template.exercises.map((te) => ({
           exerciseId: te.exercise!.id,
           name: te.exercise!.name,
@@ -57,7 +75,6 @@ export default function ActiveWorkout() {
         }))
         setExercises(exerciseStates)
 
-        // Set initial values
         if (exerciseStates.length > 0) {
           setReps(exerciseStates[0].targetReps)
           setWeight(exerciseStates[0].targetWeight || 0)
@@ -69,7 +86,7 @@ export default function ActiveWorkout() {
         title: 'Session not found',
         description: 'The workout session could not be loaded.',
       })
-      navigate('/templates')
+      navigate('/dashboard')
     } finally {
       setIsLoading(false)
     }
@@ -176,7 +193,39 @@ export default function ActiveWorkout() {
     )
   }
 
-  if (!session || !currentExercise) return null
+  if (!session) return null
+
+  // Show empty state if no exercises
+  if (exercises.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-display font-bold">
+              {session.planDayName || session.template?.name || 'Workout'}
+            </h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <Timer className="h-4 w-4" />
+              {formatDuration(duration)}
+            </p>
+          </div>
+          <Button variant="destructive" onClick={handleFinishWorkout}>
+            Finish Workout
+          </Button>
+        </div>
+        <Card className="glass">
+          <CardContent className="pt-6 text-center py-12">
+            <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No Exercises</h2>
+            <p className="text-muted-foreground mb-4">
+              This workout day doesn't have any exercises yet.
+            </p>
+            <Button onClick={handleFinishWorkout}>Complete Workout</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -184,7 +233,7 @@ export default function ActiveWorkout() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold">
-            {session.template?.name || 'Workout'}
+            {session.planDayName || session.template?.name || 'Workout'}
           </h1>
           <p className="text-muted-foreground flex items-center gap-2">
             <Timer className="h-4 w-4" />
@@ -228,9 +277,8 @@ export default function ActiveWorkout() {
             {Array.from({ length: currentExercise.targetSets }).map((_, i) => (
               <div
                 key={i}
-                className={`h-3 w-8 rounded-full transition-colors ${
-                  i < completedSetsCount ? 'bg-primary' : 'bg-secondary'
-                }`}
+                className={`h-3 w-8 rounded-full transition-colors ${i < completedSetsCount ? 'bg-primary' : 'bg-secondary'
+                  }`}
               />
             ))}
           </div>
@@ -317,11 +365,10 @@ export default function ActiveWorkout() {
             {exercises.map((exercise, index) => (
               <div
                 key={exercise.exerciseId}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                  index === currentExerciseIndex
-                    ? 'bg-primary/10 border border-primary/50'
-                    : 'bg-secondary/30 hover:bg-secondary/50'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${index === currentExerciseIndex
+                  ? 'bg-primary/10 border border-primary/50'
+                  : 'bg-secondary/30 hover:bg-secondary/50'
+                  }`}
                 onClick={() => {
                   setCurrentExerciseIndex(index)
                   setReps(exercise.targetReps)
@@ -368,33 +415,44 @@ export default function ActiveWorkout() {
 
       {/* Workout Summary */}
       <Dialog open={showSummary} onOpenChange={setShowSummary}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-primary" />
-              Workout Complete!
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="text-center">
-              <p className="text-4xl font-bold text-primary mb-2">
-                {formatDuration(duration)}
-              </p>
-              <p className="text-muted-foreground">Total Time</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-4 rounded-lg bg-secondary/30">
+        <DialogContent className="sm:max-w-md">
+          <div className="text-center py-6">
+            {/* Big celebration emoji */}
+            <div className="text-6xl mb-4">💪</div>
+
+            <h2 className="text-2xl font-bold text-primary mb-2">
+              Great Job!
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              You crushed your workout today!
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="p-3 bg-secondary/30 rounded-lg">
                 <p className="text-2xl font-bold">{completedTotalSets}</p>
-                <p className="text-sm text-muted-foreground">Sets Completed</p>
+                <p className="text-xs text-muted-foreground">Sets</p>
               </div>
-              <div className="p-4 rounded-lg bg-secondary/30">
+              <div className="p-3 bg-secondary/30 rounded-lg">
                 <p className="text-2xl font-bold">{exercises.length}</p>
-                <p className="text-sm text-muted-foreground">Exercises</p>
+                <p className="text-xs text-muted-foreground">Exercises</p>
+              </div>
+              <div className="p-3 bg-secondary/30 rounded-lg">
+                <p className="text-2xl font-bold">{formatDuration(duration)}</p>
+                <p className="text-xs text-muted-foreground">Duration</p>
               </div>
             </div>
-            <Button className="w-full" onClick={() => navigate('/history')}>
-              View History
-            </Button>
+
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate('/analytics/workout')}>
+                <Trophy className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

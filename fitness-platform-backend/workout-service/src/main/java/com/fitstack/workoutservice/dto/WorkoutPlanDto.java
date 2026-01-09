@@ -19,6 +19,8 @@ public class WorkoutPlanDto {
     private String description;
     private String planType;
     private Boolean isActive;
+    private Boolean isPrimary;
+    private Integer lastCompletedDay;
     private List<WorkoutPlanDayDto> days;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
