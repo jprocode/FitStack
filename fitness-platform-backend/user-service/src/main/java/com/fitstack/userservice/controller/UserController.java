@@ -1,5 +1,6 @@
 package com.fitstack.userservice.controller;
 
+import com.fitstack.userservice.dto.CalorieTargetDto;
 import com.fitstack.userservice.dto.UpdateProfileRequest;
 import com.fitstack.userservice.dto.UserProfileDto;
 import com.fitstack.userservice.service.UserProfileService;
@@ -26,15 +27,20 @@ public class UserController {
     @PutMapping("/profile")
     public ResponseEntity<UserProfileDto> updateProfile(
             HttpServletRequest request,
-            @Valid @RequestBody UpdateProfileRequest updateRequest
-    ) {
+            @Valid @RequestBody UpdateProfileRequest updateRequest) {
         Long userId = getUserId(request);
         UserProfileDto profile = userProfileService.updateProfile(userId, updateRequest);
         return ResponseEntity.ok(profile);
+    }
+
+    @GetMapping("/profile/calorie-targets")
+    public ResponseEntity<CalorieTargetDto> getCalorieTargets(HttpServletRequest request) {
+        Long userId = getUserId(request);
+        CalorieTargetDto targets = userProfileService.getCalorieTargets(userId);
+        return ResponseEntity.ok(targets);
     }
 
     private Long getUserId(HttpServletRequest request) {
         return (Long) request.getAttribute("userId");
     }
 }
-

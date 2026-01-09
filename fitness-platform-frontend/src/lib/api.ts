@@ -49,6 +49,7 @@ export const authApi = {
 export const userApi = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: Record<string, unknown>) => api.put('/users/profile', data),
+  getCalorieTargets: () => api.get('/users/profile/calorie-targets'),
 }
 
 // Metrics API
@@ -102,6 +103,16 @@ export const foodApi = {
     api.get('/nutrition/foods/search', { params: { q: query, limit: limit || 20 } }),
   getFoodById: (id: number) => api.get(`/nutrition/foods/${id}`),
   getFoodByFdcId: (fdcId: number) => api.get(`/nutrition/foods/fdc/${fdcId}`),
+}
+
+// Nutrition - Custom Foods API
+export const customFoodApi = {
+  getMyFoods: () => api.get('/nutrition/my-foods'),
+  searchMyFoods: (query: string) => api.get('/nutrition/my-foods/search', { params: { q: query } }),
+  getById: (id: number) => api.get(`/nutrition/my-foods/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/nutrition/my-foods', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/nutrition/my-foods/${id}`, data),
+  delete: (id: number) => api.delete(`/nutrition/my-foods/${id}`),
 }
 
 // Nutrition - Meals API

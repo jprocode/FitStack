@@ -1,5 +1,6 @@
 package com.fitstack.userservice.service;
 
+import com.fitstack.userservice.dto.CalorieTargetDto;
 import com.fitstack.userservice.dto.UpdateProfileRequest;
 import com.fitstack.userservice.dto.UserProfileDto;
 import com.fitstack.userservice.entity.User;
@@ -7,9 +8,14 @@ import com.fitstack.userservice.entity.UserProfile;
 import com.fitstack.userservice.exception.NotFoundException;
 import com.fitstack.userservice.repository.UserProfileRepository;
 import com.fitstack.userservice.repository.UserRepository;
+import com.fitstack.userservice.util.CalorieCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.Period;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +23,7 @@ public class UserProfileService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final BodyMetricService bodyMetricService;
 
     public UserProfileDto getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -65,6 +72,40 @@ public class UserProfileService {
         profile = userProfileRepository.save(profile);
 
         return buildProfileDto(user, profile);
+    }
+
+    public CalorieTargetDto getCalorieTargets(Long userId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Profile not found. Please complete your profile first."));
+
+        // Get latest weight
+        var latestMetric = bodyMetricService.getLatestMetric(userId);
+        BigDecimal weight = latestMetric != null ? latestMetric.getWeightKg() : null;
+
+        if (weight == null || profile.getHeightCm() == null || profile.getBirthDate() == null
+                || profile.getGender() == null) {
+            throw new NotFoundException(
+                    "Missing required data. Please ensure you have: weight logged, height, birth date, and gender in your profile.");
+        }
+
+        // Calculate age
+        int age = Period.between(profile.getBirthDate(), LocalDate.now()).getYears();
+
+        // Calculate BMR
+        BigDecimal bmr = CalorieCalculator.calculateBMR(weight, profile.getHeightCm(), age, profile.getGender());
+
+        // Calculate TDEE
+        String activityLevel = profile.getActivityLevel() != null ? profile.getActivityLevel() : "SEDENTARY";
+        BigDecimal tdee = CalorieCalculator.calculateTDEE(bmr, activityLevel);
+
+        return CalorieTargetDto.builder()
+                .bmr(bmr)
+                .tdee(tdee)
+                .maintenanceCalories(tdee)
+                .weightLossCalories(CalorieCalculator.calculateWeightLossTarget(tdee))
+                .muscleGainCalories(CalorieCalculator.calculateMuscleGainTarget(tdee))
+                .activityLevel(activityLevel)
+                .build();
     }
 
     private UserProfileDto buildProfileDto(User user, UserProfile profile) {

@@ -49,7 +49,7 @@ export function ThemeToggle() {
           className={theme === 'pink' ? 'bg-accent' : ''}
         >
           <Heart className="mr-2 h-4 w-4 text-pink-500" />
-          <span>Pink</span>
+          <span>Rosé Érin</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme('system')}

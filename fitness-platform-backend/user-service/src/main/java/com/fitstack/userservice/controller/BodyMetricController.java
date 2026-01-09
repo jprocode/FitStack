@@ -26,9 +26,13 @@ public class BodyMetricController {
     @PostMapping
     public ResponseEntity<BodyMetricDto> createMetric(
             HttpServletRequest request,
-            @Valid @RequestBody CreateMetricRequest createRequest
-    ) {
+            @Valid @RequestBody CreateMetricRequest createRequest) {
+        System.out.println("=== CREATE METRIC REQUEST ===");
+        System.out.println("Weight: " + createRequest.getWeightKg());
+        System.out.println("Date: " + createRequest.getMeasurementDate());
+        System.out.println("Body Fat: " + createRequest.getBodyFatPct());
         Long userId = getUserId(request);
+        System.out.println("User ID: " + userId);
         BodyMetricDto metric = bodyMetricService.createMetric(userId, createRequest);
         return new ResponseEntity<>(metric, HttpStatus.CREATED);
     }
@@ -43,8 +47,7 @@ public class BodyMetricController {
     @GetMapping("/paginated")
     public ResponseEntity<Page<BodyMetricDto>> getMetricsPaginated(
             HttpServletRequest request,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
         Long userId = getUserId(request);
         Page<BodyMetricDto> metrics = bodyMetricService.getMetrics(userId, pageable);
         return ResponseEntity.ok(metrics);
@@ -54,8 +57,7 @@ public class BodyMetricController {
     public ResponseEntity<List<BodyMetricDto>> getMetricsByDateRange(
             HttpServletRequest request,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         Long userId = getUserId(request);
         List<BodyMetricDto> metrics = bodyMetricService.getMetricsByDateRange(userId, startDate, endDate);
         return ResponseEntity.ok(metrics);
@@ -71,8 +73,7 @@ public class BodyMetricController {
     @DeleteMapping("/{metricId}")
     public ResponseEntity<Void> deleteMetric(
             HttpServletRequest request,
-            @PathVariable Long metricId
-    ) {
+            @PathVariable Long metricId) {
         Long userId = getUserId(request);
         bodyMetricService.deleteMetric(userId, metricId);
         return ResponseEntity.noContent().build();
@@ -82,4 +83,3 @@ public class BodyMetricController {
         return (Long) request.getAttribute("userId");
     }
 }
-

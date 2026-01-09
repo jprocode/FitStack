@@ -21,6 +21,7 @@ import MealHistory from '@/pages/MealHistory'
 import MealPlanGenerator from '@/pages/MealPlanGenerator'
 import MealPlanList from '@/pages/MealPlanList'
 import MealPlanDetail from '@/pages/MealPlanDetail'
+import MyFoods from '@/pages/MyFoods'
 import BodyAnalytics from '@/pages/BodyAnalytics'
 import WorkoutAnalytics from '@/pages/WorkoutAnalytics'
 import { Toaster } from '@/components/ui/toaster'
@@ -33,7 +34,7 @@ function App() {
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-        
+
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -58,6 +59,7 @@ function App() {
             <Route path="/nutrition/meal-plans" element={<MealPlanList />} />
             <Route path="/nutrition/meal-plans/generate" element={<MealPlanGenerator />} />
             <Route path="/nutrition/meal-plans/:id" element={<MealPlanDetail />} />
+            <Route path="/nutrition/my-foods" element={<MyFoods />} />
           </Route>
         </Route>
 

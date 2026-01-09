@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { mealApi } from '@/lib/api'
+import { mealApi, userApi } from '@/lib/api'
 import { DailyMacrosResponse, Meal } from '@/types/nutrition'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/use-toast'
+import { CalorieCalculatorTool } from '@/components/tools/CalorieCalculatorTool'
 import {
   Plus,
   Search,
@@ -18,9 +20,11 @@ import {
   Trash2,
   Utensils,
   Sparkles,
+  Calculator,
+  Target,
 } from 'lucide-react'
 
-// Default daily targets (could be made configurable)
+// Default daily targets (fallback if no personalized data)
 const DEFAULT_TARGETS = {
   calories: 2000,
   protein: 150,
@@ -28,13 +32,45 @@ const DEFAULT_TARGETS = {
   fat: 65,
 }
 
+interface CalorieTargets {
+  bmr: number
+  tdee: number
+  maintenanceCalories: number
+  weightLossCalories: number
+  muscleGainCalories: number
+  activityLevel: string
+}
+
 export default function NutritionDashboard() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'))
   const [dailyData, setDailyData] = useState<DailyMacrosResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [deletingMeal, setDeletingMeal] = useState<number | null>(null)
+  const [calorieTargets, setCalorieTargets] = useState<CalorieTargets | null>(null)
+  const [isCalcDialogOpen, setIsCalcDialogOpen] = useState(false)
+
+  // Fetch personalized calorie targets
+  useEffect(() => {
+    const fetchCalorieTargets = async () => {
+      try {
+        const response = await userApi.getCalorieTargets()
+        setCalorieTargets(response.data)
+      } catch (error) {
+        console.log('Using default targets (profile incomplete or not set up)')
+      }
+    }
+    fetchCalorieTargets()
+  }, [])
+
+  // Use personalized targets or defaults
+  const targets = {
+    calories: calorieTargets?.maintenanceCalories || DEFAULT_TARGETS.calories,
+    protein: DEFAULT_TARGETS.protein, // Could be calculated from weight
+    carbs: DEFAULT_TARGETS.carbs,
+    fat: DEFAULT_TARGETS.fat,
+  }
 
   const fetchDailyData = async () => {
     setLoading(true)
@@ -140,7 +176,7 @@ export default function NutritionDashboard() {
             Track your daily nutrition intake
           </p>
         </div>
-        <div className="flex gap-3 mt-4 md:mt-0">
+        <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
           <Button
             variant="outline"
             onClick={() => navigate('/nutrition/search')}
@@ -154,6 +190,13 @@ export default function NutritionDashboard() {
           >
             <Plus className="h-4 w-4 mr-2" />
             Log Meal
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/nutrition/my-foods')}
+          >
+            <Utensils className="h-4 w-4 mr-2" />
+            My Foods
           </Button>
           <Button
             variant="outline"
@@ -213,13 +256,13 @@ export default function NutritionDashboard() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {dailyData?.totalCalories?.toFixed(0) || 0}
                   <span className="text-sm font-normal text-gray-500">
-                    {' '}/ {DEFAULT_TARGETS.calories}
+                    {' '}/ {targets.calories}
                   </span>
                 </p>
                 <Progress
                   value={getProgressPercentage(
                     dailyData?.totalCalories || 0,
-                    DEFAULT_TARGETS.calories
+                    targets.calories
                   )}
                   className="h-2"
                 />
@@ -238,13 +281,13 @@ export default function NutritionDashboard() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {dailyData?.totalProtein?.toFixed(0) || 0}g
                   <span className="text-sm font-normal text-gray-500">
-                    {' '}/ {DEFAULT_TARGETS.protein}g
+                    {' '}/ {targets.protein}g
                   </span>
                 </p>
                 <Progress
                   value={getProgressPercentage(
                     dailyData?.totalProtein || 0,
-                    DEFAULT_TARGETS.protein
+                    targets.protein
                   )}
                   className="h-2"
                 />
@@ -263,13 +306,13 @@ export default function NutritionDashboard() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {dailyData?.totalCarbs?.toFixed(0) || 0}g
                   <span className="text-sm font-normal text-gray-500">
-                    {' '}/ {DEFAULT_TARGETS.carbs}g
+                    {' '}/ {targets.carbs}g
                   </span>
                 </p>
                 <Progress
                   value={getProgressPercentage(
                     dailyData?.totalCarbs || 0,
-                    DEFAULT_TARGETS.carbs
+                    targets.carbs
                   )}
                   className="h-2"
                 />
@@ -288,19 +331,52 @@ export default function NutritionDashboard() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {dailyData?.totalFat?.toFixed(0) || 0}g
                   <span className="text-sm font-normal text-gray-500">
-                    {' '}/ {DEFAULT_TARGETS.fat}g
+                    {' '}/ {targets.fat}g
                   </span>
                 </p>
                 <Progress
                   value={getProgressPercentage(
                     dailyData?.totalFat || 0,
-                    DEFAULT_TARGETS.fat
+                    targets.fat
                   )}
                   className="h-2"
                 />
               </CardContent>
             </Card>
           </div>
+
+          {/* Calorie Target Info Card */}
+          {calorieTargets && (
+            <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Target className="h-6 w-6 text-primary" />
+                    <div>
+                      <p className="font-semibold">Personalized Calorie Target</p>
+                      <p className="text-sm text-muted-foreground">
+                        Based on your profile: BMR {calorieTargets.bmr} × {calorieTargets.activityLevel.toLowerCase()} activity
+                      </p>
+                    </div>
+                  </div>
+                  <Dialog open={isCalcDialogOpen} onOpenChange={setIsCalcDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Recalculate
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Calorie Calculator</DialogTitle>
+                      </DialogHeader>
+                      <CalorieCalculatorTool />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Meals List */}
           <Card>

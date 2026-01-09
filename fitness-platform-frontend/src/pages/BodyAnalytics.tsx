@@ -40,7 +40,55 @@ export default function BodyAnalytics() {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('weight')
   const { unitSystem } = useSettingsStore()
 
-  // ... (omitted fetching logic remains same)
+  useEffect(() => {
+    fetchAnalytics()
+  }, [period])
+
+  const fetchAnalytics = async () => {
+    setIsLoading(true)
+    try {
+      const endDate = format(new Date(), 'yyyy-MM-dd')
+      let startDate: string
+
+      switch (period) {
+        case '30d':
+          startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd')
+          break
+        case '90d':
+          startDate = format(subDays(new Date(), 90), 'yyyy-MM-dd')
+          break
+        case '1y':
+          startDate = format(subYears(new Date(), 1), 'yyyy-MM-dd')
+          break
+        case 'all':
+          startDate = format(subYears(new Date(), 10), 'yyyy-MM-dd')
+          break
+        default:
+          startDate = format(subDays(new Date(), 90), 'yyyy-MM-dd')
+      }
+
+      const [trendRes, progressRes, statsRes] = await Promise.all([
+        analyticsApi.getWeightTrend(startDate, endDate),
+        analyticsApi.getGoalProgress(),
+        analyticsApi.getMetricsStats(period),
+      ])
+
+      setWeightTrend(trendRes.data || [])
+      setGoalProgress(progressRes.data || [])
+      setStats(statsRes.data)
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getTrendIcon = (value: number | null) => {
+    if (value === null) return <Minus className="h-4 w-4 text-muted-foreground" />
+    if (value > 0) return <ArrowUpRight className="h-4 w-4 text-red-500" />
+    if (value < 0) return <ArrowDownRight className="h-4 w-4 text-emerald-500" />
+    return <Minus className="h-4 w-4 text-muted-foreground" />
+  }
 
   return (
     <div className="space-y-8">

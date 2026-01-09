@@ -1,9 +1,13 @@
 package com.fitstack.userservice.service;
 
+import java.math.BigDecimal;
+
 import com.fitstack.userservice.dto.BodyMetricDto;
 import com.fitstack.userservice.dto.CreateMetricRequest;
 import com.fitstack.userservice.entity.BodyMetric;
 import com.fitstack.userservice.entity.User;
+import com.fitstack.userservice.entity.UserProfile;
+import com.fitstack.userservice.util.BodyFatCalculator;
 import com.fitstack.userservice.exception.NotFoundException;
 import com.fitstack.userservice.repository.BodyMetricRepository;
 import com.fitstack.userservice.repository.UserRepository;
@@ -29,10 +33,26 @@ public class BodyMetricService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
+        BigDecimal bodyFatPct = request.getBodyFatPct();
+        UserProfile profile = user.getProfile();
+
+        // Auto-calculate Body Fat % if not provided
+        if (bodyFatPct == null && profile != null && profile.getGender() != null && profile.getHeightCm() != null) {
+            String gender = profile.getGender();
+            BigDecimal height = profile.getHeightCm();
+
+            if ("MALE".equalsIgnoreCase(gender) || "MAN".equalsIgnoreCase(gender)) {
+                bodyFatPct = BodyFatCalculator.calculateMaleBodyFat(height, request.getNeckCm(), request.getWaistCm());
+            } else if ("FEMALE".equalsIgnoreCase(gender) || "WOMAN".equalsIgnoreCase(gender)) {
+                bodyFatPct = BodyFatCalculator.calculateFemaleBodyFat(height, request.getNeckCm(), request.getWaistCm(),
+                        request.getHipsCm());
+            }
+        }
+
         BodyMetric metric = BodyMetric.builder()
                 .user(user)
                 .weightKg(request.getWeightKg())
-                .bodyFatPct(request.getBodyFatPct())
+                .bodyFatPct(bodyFatPct)
                 .measurementDate(request.getMeasurementDate())
                 .notes(request.getNotes())
                 .neckCm(request.getNeckCm())
