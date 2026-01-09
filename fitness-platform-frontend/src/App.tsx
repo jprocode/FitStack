@@ -24,6 +24,8 @@ import MealPlanDetail from '@/pages/MealPlanDetail'
 import MyFoods from '@/pages/MyFoods'
 import BodyAnalytics from '@/pages/BodyAnalytics'
 import WorkoutAnalytics from '@/pages/WorkoutAnalytics'
+import WorkoutPlanList from '@/pages/WorkoutPlanList'
+import WorkoutPlanBuilder from '@/pages/WorkoutPlanBuilder'
 import { Toaster } from '@/components/ui/toaster'
 
 function App() {
@@ -48,6 +50,11 @@ function App() {
             <Route path="/templates/:id/edit" element={<TemplateBuilder />} />
             <Route path="/workout/:sessionId" element={<ActiveWorkout />} />
             <Route path="/history" element={<WorkoutHistory />} />
+            {/* Workout Plan Routes */}
+            <Route path="/plans" element={<WorkoutPlanList />} />
+            <Route path="/plans/new" element={<WorkoutPlanBuilder />} />
+            <Route path="/plans/:id" element={<WorkoutPlanBuilder />} />
+            <Route path="/plans/:id/edit" element={<WorkoutPlanBuilder />} />
             {/* Analytics Routes */}
             <Route path="/analytics/body" element={<BodyAnalytics />} />
             <Route path="/analytics/workout" element={<WorkoutAnalytics />} />

@@ -86,6 +86,19 @@ export const templateApi = {
   deleteTemplate: (id: number) => api.delete(`/workouts/templates/${id}`),
 }
 
+// Workout Plan API
+export const workoutPlanApi = {
+  getPlans: () => api.get('/workouts/plans'),
+  getPlan: (id: number) => api.get(`/workouts/plans/${id}`),
+  createPlan: (data: Record<string, unknown>) => api.post('/workouts/plans', data),
+  updatePlan: (id: number, data: Record<string, unknown>) => api.put(`/workouts/plans/${id}`, data),
+  deletePlan: (id: number) => api.delete(`/workouts/plans/${id}`),
+  addDay: (planId: number, data: Record<string, unknown>) => api.post(`/workouts/plans/${planId}/days`, data),
+  updateDay: (planId: number, dayId: number, data: Record<string, unknown>) =>
+    api.put(`/workouts/plans/${planId}/days/${dayId}`, data),
+  deleteDay: (planId: number, dayId: number) => api.delete(`/workouts/plans/${planId}/days/${dayId}`),
+}
+
 // Session API
 export const sessionApi = {
   startSession: (data: { templateId: number }) => api.post('/workouts/sessions', data),
