@@ -17,19 +17,19 @@ import {
   ArrowLeft,
   Play,
   SkipForward,
-  Plus
+  Plus,
+  ChevronRight
 } from 'lucide-react'
 import type { WorkoutSession, WorkoutSet } from '@/types/session'
 
-// Exercise state for tracking progress
+// Exercise state for tracking progress during workout
 interface ExerciseState {
   exerciseId: number
   name: string
   targetSets: number
-  targetReps: string  // Can be "8-12" or "10"
+  targetReps: string
   restSeconds: number
   completedSets: WorkoutSet[]
-  isComplete: boolean
 }
 
 // View modes for the workout session
@@ -51,10 +51,10 @@ export default function ActiveWorkout() {
   const [selectedExerciseId, setSelectedExerciseId] = useState<number | null>(null)
 
   // Rest timer state (180 seconds = 3 minutes)
-  const [restTime, setRestTime] = useState(180)
   const REST_DURATION = 180
+  const [restTime, setRestTime] = useState(REST_DURATION)
 
-  // Logging state
+  // Logging inputs
   const [reps, setReps] = useState(10)
   const [weight, setWeight] = useState(0)
   const [isLogging, setIsLogging] = useState(false)
@@ -70,38 +70,37 @@ export default function ActiveWorkout() {
       const data: WorkoutSession = response.data
       setSession(data)
 
-      // Handle plan-based sessions
+      // Build exercise states from planDayExercises
       if (data.planDayExercises && data.planDayExercises.length > 0) {
         const exerciseStates: ExerciseState[] = data.planDayExercises.map((pe) => {
-          const completedSets = data.sets.filter((s) => s.exerciseId === pe.exerciseId)
+          const completedSets = (data.sets || []).filter((s) => s.exerciseId === pe.exerciseId)
           return {
             exerciseId: pe.exerciseId,
             name: pe.exerciseName,
             targetSets: pe.targetSets || 3,
             targetReps: pe.targetReps || '8-12',
-            restSeconds: pe.restSeconds || 180,
-            completedSets,
-            isComplete: completedSets.length >= (pe.targetSets || 3)
+            restSeconds: pe.restSeconds || REST_DURATION,
+            completedSets
           }
         })
         setExercises(exerciseStates)
       } else if (data.template?.exercises) {
-        // Handle template-based sessions (legacy)
+        // Fallback for template-based sessions
         const exerciseStates: ExerciseState[] = data.template.exercises.map((te) => {
-          const completedSets = data.sets.filter((s) => s.exerciseId === te.exercise!.id)
+          const completedSets = (data.sets || []).filter((s) => s.exerciseId === te.exercise!.id)
           return {
             exerciseId: te.exercise!.id,
             name: te.exercise!.name,
             targetSets: te.targetSets || 3,
             targetReps: String(te.targetReps || '8-12'),
-            restSeconds: 180,
-            completedSets,
-            isComplete: completedSets.length >= (te.targetSets || 3)
+            restSeconds: REST_DURATION,
+            completedSets
           }
         })
         setExercises(exerciseStates)
       }
     } catch (error) {
+      console.error('Failed to load session:', error)
       toast({
         variant: 'destructive',
         title: 'Session not found',
@@ -133,14 +132,19 @@ export default function ActiveWorkout() {
     }
   }, [viewMode, restTime])
 
-  // Get selected exercise
+  // Get current selected exercise
   const selectedExercise = exercises.find(e => e.exerciseId === selectedExerciseId)
 
-  // Calculate progress
-  const completedExercisesCount = exercises.filter(e => e.isComplete).length
-  const totalSets = exercises.reduce((acc, e) => acc + e.targetSets, 0)
-  const completedTotalSets = exercises.reduce((acc, e) => acc + e.completedSets.length, 0)
-  const progress = totalSets > 0 ? (completedTotalSets / totalSets) * 100 : 0
+  // Calculate stats
+  const exercisesWithSets = exercises.filter(e => e.completedSets.length > 0)
+  const completedExercisesCount = exercisesWithSets.length
+  const totalSets = exercises.reduce((acc, e) => acc + e.completedSets.length, 0)
+
+  // Check if exercise has at least one set logged
+  const hasLoggedSet = (exerciseId: number) => {
+    const ex = exercises.find(e => e.exerciseId === exerciseId)
+    return ex && ex.completedSets.length > 0
+  }
 
   // Start logging an exercise
   const handleStartExercise = (exerciseId: number) => {
@@ -148,7 +152,6 @@ export default function ActiveWorkout() {
     if (!exercise) return
 
     setSelectedExerciseId(exerciseId)
-    // Set default reps from target
     const defaultReps = parseInt(exercise.targetReps.split('-')[0]) || 10
     setReps(defaultReps)
     setViewMode('logging')
@@ -168,15 +171,13 @@ export default function ActiveWorkout() {
         weightUsed: weight,
       })
 
-      // Update local state
+      // Update local state with new set
       const newSet = response.data
       setExercises(prev => prev.map(ex => {
         if (ex.exerciseId === selectedExercise.exerciseId) {
-          const newCompletedSets = [...ex.completedSets, newSet]
           return {
             ...ex,
-            completedSets: newCompletedSets,
-            isComplete: newCompletedSets.length >= ex.targetSets
+            completedSets: [...ex.completedSets, newSet]
           }
         }
         return ex
@@ -191,6 +192,7 @@ export default function ActiveWorkout() {
         description: `Set ${setNumber}: ${reps} reps @ ${weight} lbs`,
       })
     } catch (error) {
+      console.error('Failed to log set:', error)
       toast({
         variant: 'destructive',
         title: 'Failed to log set',
@@ -201,16 +203,26 @@ export default function ActiveWorkout() {
     }
   }
 
-  // Skip rest and add another set
+  // Skip rest timer
   const handleSkipRest = () => {
     setRestTime(REST_DURATION)
     setViewMode('logging')
   }
 
-  // Finish current exercise and go back to list
+  // Go back to exercise list
+  const handleBackToList = () => {
+    setSelectedExerciseId(null)
+    setViewMode('list')
+  }
+
+  // Finish current exercise
   const handleFinishExercise = () => {
     setSelectedExerciseId(null)
     setViewMode('list')
+    toast({
+      title: 'Exercise complete!',
+      description: 'Great work! Select your next exercise.',
+    })
   }
 
   // Finish entire workout
@@ -221,6 +233,7 @@ export default function ActiveWorkout() {
       await sessionApi.completeSession(session.id, { notes: '' })
       setShowCelebration(true)
     } catch (error) {
+      console.error('Failed to complete workout:', error)
       toast({
         variant: 'destructive',
         title: 'Failed to complete workout',
@@ -239,7 +252,7 @@ export default function ActiveWorkout() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center items-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
@@ -247,38 +260,47 @@ export default function ActiveWorkout() {
 
   if (!session) return null
 
-  // ========== RENDER: REST TIMER VIEW ==========
+  // ========== VIEW: REST TIMER ==========
   if (viewMode === 'rest' && selectedExercise) {
     const restProgress = ((REST_DURATION - restTime) / REST_DURATION) * 100
 
     return (
-      <div className="max-w-lg mx-auto space-y-6 px-4">
-        <Card className="glass">
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        {/* Back button */}
+        <Button variant="ghost" className="mb-4" onClick={handleBackToList}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Exercise List
+        </Button>
+
+        {/* Exercise name */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold">{selectedExercise.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            Recommended: {selectedExercise.targetSets} sets of {selectedExercise.targetReps} reps
+          </p>
+        </div>
+
+        {/* Rest Timer Card */}
+        <Card className="glass mb-6">
           <CardContent className="pt-8 pb-8 text-center">
             <Timer className="h-12 w-12 mx-auto text-primary mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">REST</p>
-            <p className="text-6xl font-bold text-primary mb-4">
+            <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">⏱️ Rest Timer</p>
+            <p className="text-6xl font-bold text-primary mb-4 font-mono">
               {formatRestTime(restTime)}
             </p>
             <Progress value={restProgress} className="h-2 mb-6" />
 
-            <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={handleSkipRest}>
-                <SkipForward className="h-4 w-4 mr-2" />
-                Skip
-              </Button>
-              <Button onClick={handleSkipRest}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Another Set
-              </Button>
-            </div>
+            <Button variant="outline" onClick={handleSkipRest}>
+              <SkipForward className="h-4 w-4 mr-2" />
+              Skip Rest
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Completed sets for current exercise */}
-        <Card>
+        {/* Completed sets */}
+        <Card className="mb-6">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">{selectedExercise.name}</CardTitle>
+            <CardTitle className="text-base">Completed Sets</CardTitle>
           </CardHeader>
           <CardContent>
             {selectedExercise.completedSets.length === 0 ? (
@@ -286,9 +308,10 @@ export default function ActiveWorkout() {
             ) : (
               <div className="space-y-2">
                 {selectedExercise.completedSets.map((set, i) => (
-                  <div key={set.id} className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Set {i + 1}</span>
-                    <span className="font-medium">{set.repsCompleted} reps @ {set.weightUsed} lbs</span>
+                  <div key={set.id} className="flex items-center gap-3 p-2 bg-primary/10 rounded">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Set {i + 1}:</span>
+                    <span className="text-muted-foreground">{set.repsCompleted} reps @ {set.weightUsed} lbs</span>
                   </div>
                 ))}
               </div>
@@ -296,62 +319,67 @@ export default function ActiveWorkout() {
           </CardContent>
         </Card>
 
-        <Button variant="outline" className="w-full" onClick={handleFinishExercise}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Exercise List
+        {/* Add Another Set button */}
+        <Button className="w-full" size="lg" onClick={handleSkipRest}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Another Set
         </Button>
       </div>
     )
   }
 
-  // ========== RENDER: EXERCISE LOGGING VIEW ==========
+  // ========== VIEW: EXERCISE LOGGING ==========
   if (viewMode === 'logging' && selectedExercise) {
     const currentSetNumber = selectedExercise.completedSets.length + 1
 
     return (
-      <div className="max-w-lg mx-auto space-y-6 px-4">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleFinishExercise}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold">{selectedExercise.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              Recommended: {selectedExercise.targetSets} sets of {selectedExercise.targetReps} reps
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-8 max-w-lg">
+        {/* Back button */}
+        <Button variant="ghost" className="mb-4" onClick={handleBackToList}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Exercise List
+        </Button>
+
+        {/* Exercise header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">{selectedExercise.name}</h1>
+          <p className="text-muted-foreground">
+            Recommended: {selectedExercise.targetSets} sets of {selectedExercise.targetReps} reps
+          </p>
         </div>
 
-        {/* Current Set Input */}
-        <Card className="glass border-primary/50">
+        {/* Log Set Card */}
+        <Card className="glass border-primary/50 mb-6">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Set {currentSetNumber}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              📝 LOG SET {currentSetNumber}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Reps</label>
-                <Input
-                  type="number"
-                  value={reps}
-                  onChange={(e) => setReps(parseInt(e.target.value) || 0)}
-                  className="text-center text-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Weight (lbs)</label>
-                <Input
-                  type="number"
-                  value={weight}
-                  onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
-                  className="text-center text-lg"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reps</label>
+              <Input
+                type="number"
+                value={reps}
+                onChange={(e) => setReps(parseInt(e.target.value) || 0)}
+                className="text-lg h-12"
+                placeholder="Enter reps"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Weight (lbs)</label>
+              <Input
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
+                className="text-lg h-12"
+                placeholder="Enter weight"
+              />
             </div>
 
             <Button
-              className="w-full"
+              className="w-full h-12"
               size="lg"
               onClick={handleCompleteSet}
               disabled={isLogging}
@@ -368,15 +396,16 @@ export default function ActiveWorkout() {
 
         {/* Completed Sets */}
         {selectedExercise.completedSets.length > 0 && (
-          <Card>
+          <Card className="mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Completed Sets</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {selectedExercise.completedSets.map((set, i) => (
-                  <div key={set.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                    <span className="font-medium">Set {i + 1}</span>
+                  <div key={set.id} className="flex items-center gap-3 p-2 bg-primary/10 rounded">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Set {i + 1}:</span>
                     <span className="text-muted-foreground">{set.repsCompleted} reps @ {set.weightUsed} lbs</span>
                   </div>
                 ))}
@@ -385,7 +414,7 @@ export default function ActiveWorkout() {
           </Card>
         )}
 
-        {/* Finish Exercise Button */}
+        {/* Finish Exercise button (only show if at least 1 set logged) */}
         {selectedExercise.completedSets.length > 0 && (
           <Button variant="outline" className="w-full" onClick={handleFinishExercise}>
             Finish Exercise
@@ -395,86 +424,74 @@ export default function ActiveWorkout() {
     )
   }
 
-  // ========== RENDER: EXERCISE LIST VIEW (DEFAULT) ==========
+  // ========== VIEW: EXERCISE LIST (DEFAULT) ==========
   return (
-    <div className="max-w-lg mx-auto space-y-6 px-4">
+    <div className="container mx-auto px-4 py-8 max-w-lg">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {session.planDayName || session.template?.name || 'Workout'}
-          </h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Timer className="h-4 w-4" />
-            {formatDuration(duration)} • {completedExercisesCount}/{exercises.length} complete
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">
+          Active Workout: {session.planDayName || session.template?.name || 'Workout'}
+        </h1>
+        <p className="text-muted-foreground">
+          Progress: {completedExercisesCount}/{exercises.length} exercises completed
+        </p>
+        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+          <Timer className="h-4 w-4" />
+          {formatDuration(duration)} elapsed
+        </p>
       </div>
 
-      {/* Progress Bar */}
-      <Card className="glass">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Progress</span>
-            <span className="text-sm font-medium">{completedTotalSets}/{totalSets} sets</span>
-          </div>
-          <Progress value={progress} className="h-3" />
-        </CardContent>
-      </Card>
-
       {/* Exercise List */}
-      <div className="space-y-3">
-        {exercises.map((exercise) => {
-          const isComplete = exercise.isComplete
+      <div className="space-y-4 mb-8">
+        {exercises.map((exercise, index) => {
           const setsCompleted = exercise.completedSets.length
+          const hasStarted = setsCompleted > 0
 
           return (
             <Card
               key={exercise.exerciseId}
-              className={`cursor-pointer transition-all ${isComplete
-                  ? 'bg-primary/10 border-primary/30'
-                  : 'hover:border-primary/50'
+              className={`transition-all cursor-pointer ${hasStarted ? 'border-primary/50 bg-primary/5' : 'hover:border-primary/30'
                 }`}
-              onClick={() => !isComplete && handleStartExercise(exercise.exerciseId)}
+              onClick={() => handleStartExercise(exercise.exerciseId)}
             >
               <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isComplete ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                      {isComplete ? (
-                        <Check className="h-4 w-4" />
-                      ) : setsCompleted > 0 ? (
-                        <span className="text-sm font-medium">{setsCompleted}</span>
-                      ) : (
-                        <Dumbbell className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div>
-                      <p className={`font-medium ${isComplete ? 'line-through text-muted-foreground' : ''}`}>
-                        {exercise.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {exercise.targetSets} sets of {exercise.targetReps} reps
-                      </p>
-                    </div>
+                <div className="flex items-start gap-4">
+                  {/* Status indicator */}
+                  <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${hasStarted ? 'bg-primary text-primary-foreground' : 'bg-secondary'
+                    }`}>
+                    {hasStarted ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      <Dumbbell className="h-5 w-5" />
+                    )}
                   </div>
 
-                  {!isComplete && (
-                    <Button size="sm" variant="ghost">
-                      <Play className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Show completed sets preview */}
-                {setsCompleted > 0 && !isComplete && (
-                  <div className="mt-2 pt-2 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      {setsCompleted}/{exercise.targetSets} sets completed
+                  {/* Exercise info */}
+                  <div className="flex-1">
+                    <p className="font-semibold text-lg">
+                      {hasStarted && '✓ '}{exercise.name}
+                      {hasStarted && <span className="text-sm font-normal text-muted-foreground ml-2">({setsCompleted} sets completed)</span>}
                     </p>
+                    <p className="text-sm text-muted-foreground">
+                      Recommended: {exercise.targetSets} sets of {exercise.targetReps} reps
+                    </p>
+
+                    {/* Start/Continue button */}
+                    {!hasStarted ? (
+                      <Button size="sm" className="mt-3">
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Exercise
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="mt-3">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add More Sets
+                      </Button>
+                    )}
                   </div>
-                )}
+
+                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-2" />
+                </div>
               </CardContent>
             </Card>
           )
@@ -483,13 +500,20 @@ export default function ActiveWorkout() {
 
       {/* Finish Workout Button */}
       <Button
-        className="w-full"
+        className="w-full h-14 text-lg"
         size="lg"
         onClick={handleFinishWorkout}
+        disabled={completedExercisesCount === 0}
       >
-        <Trophy className="h-4 w-4 mr-2" />
+        <Trophy className="h-5 w-5 mr-2" />
         Finish Workout
       </Button>
+
+      {completedExercisesCount === 0 && (
+        <p className="text-center text-sm text-muted-foreground mt-2">
+          Complete at least one exercise to finish your workout
+        </p>
+      )}
 
       {/* Celebration Modal */}
       <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
@@ -507,7 +531,7 @@ export default function ActiveWorkout() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="p-3 bg-secondary/30 rounded-lg">
-                <p className="text-2xl font-bold">{completedTotalSets}</p>
+                <p className="text-2xl font-bold">{totalSets}</p>
                 <p className="text-xs text-muted-foreground">Sets</p>
               </div>
               <div className="p-3 bg-secondary/30 rounded-lg">
