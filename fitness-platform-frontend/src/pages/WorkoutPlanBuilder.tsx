@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { workoutPlanApi, exerciseApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -59,6 +59,23 @@ export default function WorkoutPlanBuilder() {
     const [addDayDialogOpen, setAddDayDialogOpen] = useState(false)
     const [newDayIdentifier, setNewDayIdentifier] = useState('')
     const [newDayName, setNewDayName] = useState('')
+    // Searchable exercise inputs per day
+    const [exerciseSearchQuery, setExerciseSearchQuery] = useState<Record<number, string>>({})
+    const [showExerciseDropdown, setShowExerciseDropdown] = useState<Record<number, boolean>>({})
+    const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({})
+
+    // Click outside handler to close dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            Object.entries(dropdownRefs.current).forEach(([dayIndex, ref]) => {
+                if (ref && !ref.contains(event.target as Node)) {
+                    setShowExerciseDropdown(prev => ({ ...prev, [parseInt(dayIndex)]: false }))
+                }
+            })
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     // Fetch exercises
     useEffect(() => {
@@ -130,9 +147,22 @@ export default function WorkoutPlanBuilder() {
             exerciseName: exercise.name,
             targetSets: 3,
             targetReps: '8-12',
-            restSeconds: 90,
+            restSeconds: 180,
         })
         setDays(newDays)
+        // Clear search
+        setExerciseSearchQuery(prev => ({ ...prev, [dayIndex]: '' }))
+        setShowExerciseDropdown(prev => ({ ...prev, [dayIndex]: false }))
+    }
+
+    // Get filtered exercises for a day based on search query
+    const getFilteredExercises = (dayIndex: number) => {
+        const query = (exerciseSearchQuery[dayIndex] || '').toLowerCase()
+        if (!query) return exercises
+        return exercises.filter(ex =>
+            ex.name.toLowerCase().includes(query) ||
+            ex.muscleGroup.toLowerCase().includes(query)
+        )
     }
 
     const handleRemoveExerciseFromDay = (dayIndex: number, exerciseIndex: number) => {
@@ -396,19 +426,36 @@ export default function WorkoutPlanBuilder() {
                                     </div>
                                 )}
 
-                                {/* Add exercise */}
-                                <Select onValueChange={(v) => handleAddExerciseToDay(dayIndex, parseInt(v))}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="+ Add exercise" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {exercises.map(ex => (
-                                            <SelectItem key={ex.id} value={String(ex.id)}>
-                                                {ex.name} ({ex.muscleGroup})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                {/* Add exercise - Searchable */}
+                                <div className="relative" ref={(el) => { dropdownRefs.current[dayIndex] = el }}>
+                                    <Input
+                                        placeholder="🔍 Search exercises..."
+                                        value={exerciseSearchQuery[dayIndex] || ''}
+                                        onChange={(e) => {
+                                            setExerciseSearchQuery(prev => ({ ...prev, [dayIndex]: e.target.value }))
+                                            setShowExerciseDropdown(prev => ({ ...prev, [dayIndex]: true }))
+                                        }}
+                                        onFocus={() => setShowExerciseDropdown(prev => ({ ...prev, [dayIndex]: true }))}
+                                    />
+                                    {showExerciseDropdown[dayIndex] && (
+                                        <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                                            {getFilteredExercises(dayIndex).length === 0 ? (
+                                                <div className="p-2 text-sm text-muted-foreground">No exercises found</div>
+                                            ) : (
+                                                getFilteredExercises(dayIndex).slice(0, 10).map(ex => (
+                                                    <div
+                                                        key={ex.id}
+                                                        className="p-2 hover:bg-muted cursor-pointer flex justify-between items-center"
+                                                        onClick={() => handleAddExerciseToDay(dayIndex, ex.id)}
+                                                    >
+                                                        <span>{ex.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{ex.muscleGroup}</span>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     ))
