@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trophy, Medal, Star, ChevronUp, ChevronDown, Flame } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
-import { useSettingsStore } from '@/store/settingsStore'
-import { formatWeight, kgToLbs } from '@/lib/unitConversions'
 import type { PersonalRecord } from '@/types/analytics'
 
 interface PersonalRecordsListProps {
@@ -16,7 +14,6 @@ type SortKey = 'maxWeight' | 'maxVolume' | 'exerciseName'
 export function PersonalRecordsList({ records }: PersonalRecordsListProps) {
   const [sortKey, setSortKey] = useState<SortKey>('maxWeight')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const { unitSystem } = useSettingsStore()
 
   if (!records || records.length === 0) {
     return (
@@ -57,10 +54,14 @@ export function PersonalRecordsList({ records }: PersonalRecordsListProps) {
     return sortDirection === 'asc' ? comparison : -comparison
   })
 
-  // Helper to format volume since it's much larger than body weight
+  // Helper to format volume (data already in user's unit: lbs)
   const formatVolume = (vol: number) => {
-    const val = unitSystem === 'metric' ? vol : kgToLbs(vol)
-    return `${val.toFixed(0)} ${unitSystem === 'metric' ? 'kg' : 'lbs'}`
+    return `${vol.toFixed(0)} lbs`
+  }
+
+  // Helper to format weight (data already in user's unit: lbs)
+  const formatWeightValue = (weight: number) => {
+    return `${weight.toFixed(1)} lbs`
   }
 
   const SortButton = ({ column, label }: { column: SortKey; label: string }) => (
@@ -130,13 +131,13 @@ export function PersonalRecordsList({ records }: PersonalRecordsListProps) {
                     </div>
                   </td>
                   <td className="text-right py-3 font-medium">
-                    {formatWeight(record.maxWeight, unitSystem)}
+                    {formatWeightValue(record.maxWeight)}
                   </td>
                   <td className="text-right py-3">{record.maxReps}</td>
                   <td className="text-right py-3">{formatVolume(record.maxVolume)}</td>
                   <td className="text-right py-3 text-muted-foreground">
                     {record.estimatedOneRepMax
-                      ? formatWeight(record.estimatedOneRepMax, unitSystem)
+                      ? formatWeightValue(record.estimatedOneRepMax)
                       : '—'}
                   </td>
                   <td className="text-right py-3 text-sm text-muted-foreground">

@@ -15,7 +15,6 @@ import { ProgressiveOverloadCard } from '@/components/ProgressiveOverloadCard'
 import { BarChart3, TrendingUp, Trophy, Zap, Dumbbell, Calendar } from 'lucide-react'
 import { format, subDays, subYears } from 'date-fns'
 import { useSettingsStore } from '@/store/settingsStore'
-import { kgToLbs } from '@/lib/unitConversions'
 import type {
   WorkoutFrequencyData,
   VolumeProgressionData,
@@ -106,7 +105,8 @@ export default function WorkoutAnalytics() {
     frequency.length > 0 ? (totalWorkouts / frequency.length).toFixed(1) : '0'
 
   const rawTotalVolume = volume.reduce((sum, v) => sum + v.totalVolume, 0)
-  const totalVolume = unitSystem === 'metric' ? rawTotalVolume : kgToLbs(rawTotalVolume)
+  // Note: Data is stored in user's preferred unit (lbs), no conversion needed
+  const totalVolume = rawTotalVolume
 
   const recentPRs = personalRecords.filter((pr) => pr.isRecent).length
 
@@ -161,7 +161,7 @@ export default function WorkoutAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(totalVolume / 1000).toFixed(0)}k {unitSystem === 'metric' ? 'kg' : 'lbs'}
+              {(totalVolume / 1000).toFixed(0)}k lbs
             </div>
             <p className="text-xs text-muted-foreground">Weight × Reps lifted</p>
           </CardContent>

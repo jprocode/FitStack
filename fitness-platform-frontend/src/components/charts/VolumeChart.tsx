@@ -9,15 +9,12 @@ import {
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import type { VolumeProgressionData } from '@/types/analytics'
-import { useSettingsStore } from '@/store/settingsStore'
-import { kgToLbs } from '@/lib/unitConversions'
 
 interface VolumeChartProps {
   data: VolumeProgressionData[]
 }
 
 export function VolumeChart({ data }: VolumeChartProps) {
-  const { unitSystem } = useSettingsStore()
 
   if (!data || data.length === 0) {
     return (
@@ -28,7 +25,8 @@ export function VolumeChart({ data }: VolumeChartProps) {
   }
 
   const formattedData = data.map((item) => {
-    const volume = unitSystem === 'metric' ? item.totalVolume : kgToLbs(item.totalVolume)
+    // Data is already stored in user's preferred unit (lbs)
+    const volume = item.totalVolume
     return {
       ...item,
       date: format(parseISO(item.date), 'MMM d'),
@@ -47,7 +45,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
           <p className="text-sm">
             <span className="text-muted-foreground">Volume: </span>
             <span className="font-medium">
-              {item.volumeFormatted} {unitSystem === 'metric' ? 'kg' : 'lbs'}
+              {item.volumeFormatted} lbs
             </span>
           </p>
           <p className="text-sm">
