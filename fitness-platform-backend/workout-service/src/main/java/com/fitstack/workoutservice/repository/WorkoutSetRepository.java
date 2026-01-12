@@ -37,6 +37,9 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
 
     // Get the most recent sets for an exercise
     @Query("SELECT ws FROM WorkoutSet ws JOIN ws.session s WHERE s.userId = :userId AND ws.exercise.id = :exerciseId AND s.status = 'COMPLETED' ORDER BY ws.completedAt DESC")
-    List<WorkoutSet> findRecentSetsByUserIdAndExerciseId(@Param("userId") Long userId, @Param("exerciseId") Long exerciseId);
-}
+    List<WorkoutSet> findRecentSetsByUserIdAndExerciseId(@Param("userId") Long userId,
+            @Param("exerciseId") Long exerciseId);
 
+    // Delete sets by session IDs
+    void deleteBySessionIdIn(List<Long> sessionIds);
+}

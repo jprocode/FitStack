@@ -75,6 +75,8 @@ export const exerciseApi = {
   getExercises: (params?: { search?: string; muscleGroup?: string; equipment?: string }) =>
     api.get('/workouts/exercises', { params }),
   getExercise: (id: number) => api.get(`/workouts/exercises/${id}`),
+  getMuscleGroups: () => api.get('/workouts/exercises/muscle-groups'),
+  getEquipment: () => api.get('/workouts/exercises/equipment'),
 }
 
 // Template API
@@ -170,6 +172,9 @@ export const workoutAnalyticsApi = {
     api.get('/workouts/analytics/volume', { params: { exerciseId, period } }),
   getPersonalRecords: () => api.get('/workouts/analytics/personal-records'),
   getProgressiveOverload: () => api.get('/workouts/analytics/progressive-overload'),
+  clearAll: () => api.delete('/workouts/analytics/clear-all'),
+  clearRecent: () => api.delete('/workouts/analytics/clear-recent'),
+  clearLastSession: () => api.delete('/workouts/analytics/clear-last-session'),
 }
 
 export default api

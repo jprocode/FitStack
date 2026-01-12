@@ -343,4 +343,78 @@ public class WorkoutAnalyticsService {
             default -> now.minusDays(90);
         };
     }
+
+    /**
+     * Clear all workout data for a user (sessions and sets)
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public void clearAllWorkoutData(Long userId) {
+        log.info("Clearing all workout data for user {}", userId);
+
+        // Get all sessions for user
+        List<WorkoutSession> sessions = sessionRepository.findByUserIdOrderByStartedAtDesc(userId);
+        List<Long> sessionIds = sessions.stream().map(WorkoutSession::getId).toList();
+
+        // Delete all sets first (due to foreign key)
+        if (!sessionIds.isEmpty()) {
+            setRepository.deleteBySessionIdIn(sessionIds);
+        }
+
+        // Delete all sessions
+        sessionRepository.deleteByUserId(userId);
+
+        log.info("Cleared {} sessions for user {}", sessions.size(), userId);
+    }
+
+    /**
+     * Clear recent workout data (last 7 days) - for correcting wrong inputs
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public void clearRecentWorkoutData(Long userId) {
+        log.info("Clearing recent workout data (last 7 days) for user {}", userId);
+
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+
+        // Get recent sessions
+        List<WorkoutSession> recentSessions = sessionRepository.findByUserIdOrderByStartedAtDesc(userId)
+                .stream()
+                .filter(s -> s.getStartedAt() != null && s.getStartedAt().isAfter(sevenDaysAgo))
+                .toList();
+
+        List<Long> sessionIds = recentSessions.stream().map(WorkoutSession::getId).toList();
+
+        // Delete sets from recent sessions
+        if (!sessionIds.isEmpty()) {
+            setRepository.deleteBySessionIdIn(sessionIds);
+            sessionRepository.deleteAllById(sessionIds);
+        }
+
+        log.info("Cleared {} recent sessions for user {}", recentSessions.size(), userId);
+    }
+
+    /**
+     * Clear just the last (most recent) workout session
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public void clearLastSession(Long userId) {
+        log.info("Clearing last workout session for user {}", userId);
+
+        // Get the most recent session
+        List<WorkoutSession> sessions = sessionRepository.findByUserIdOrderByStartedAtDesc(userId);
+
+        if (sessions.isEmpty()) {
+            log.info("No sessions found for user {}", userId);
+            return;
+        }
+
+        WorkoutSession lastSession = sessions.get(0);
+
+        // Delete sets from this session
+        setRepository.deleteBySessionIdIn(List.of(lastSession.getId()));
+
+        // Delete the session
+        sessionRepository.deleteById(lastSession.getId());
+
+        log.info("Cleared last session (ID: {}) for user {}", lastSession.getId(), userId);
+    }
 }

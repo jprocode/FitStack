@@ -14,7 +14,7 @@ export default function ExerciseLibrary() {
   const [equipmentList, setEquipmentList] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
-  
+
   const [search, setSearch] = useState('')
   const [muscleGroup, setMuscleGroup] = useState<string>('')
   const [equipment, setEquipment] = useState<string>('')
@@ -47,15 +47,11 @@ export default function ExerciseLibrary() {
     const fetchFilters = async () => {
       try {
         const [muscleRes, equipRes] = await Promise.all([
-          exerciseApi.getExercises({}),
-          exerciseApi.getExercises({}),
+          exerciseApi.getMuscleGroups(),
+          exerciseApi.getEquipment(),
         ])
-        // Extract unique muscle groups and equipment from exercises
-        const allExercises = muscleRes.data.content || []
-        const muscles = [...new Set(allExercises.map((e: Exercise) => e.muscleGroup).filter(Boolean))]
-        const equips = [...new Set(allExercises.map((e: Exercise) => e.equipment).filter(Boolean))]
-        setMuscleGroups(muscles as string[])
-        setEquipmentList(equips as string[])
+        setMuscleGroups(muscleRes.data || [])
+        setEquipmentList(equipRes.data || [])
       } catch (error) {
         console.error('Failed to fetch filters:', error)
       }

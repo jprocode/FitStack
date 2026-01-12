@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { workoutAnalyticsApi, exerciseApi } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -8,13 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { WorkoutFrequencyChart } from '@/components/charts/WorkoutFrequencyChart'
 import { VolumeChart } from '@/components/charts/VolumeChart'
 import { PersonalRecordsList } from '@/components/PersonalRecordsList'
 import { ProgressiveOverloadCard } from '@/components/ProgressiveOverloadCard'
-import { BarChart3, TrendingUp, Trophy, Zap, Dumbbell, Calendar } from 'lucide-react'
+import { BarChart3, TrendingUp, Trophy, Dumbbell, Calendar, RotateCcw, AlertTriangle, Loader2 } from 'lucide-react'
 import { format, subDays, subYears } from 'date-fns'
-import { useSettingsStore } from '@/store/settingsStore'
+import { useToast } from '@/components/ui/use-toast'
 import type {
   WorkoutFrequencyData,
   VolumeProgressionData,
@@ -31,7 +40,9 @@ export default function WorkoutAnalytics() {
   const [period, setPeriod] = useState('90d')
   const [selectedExercise, setSelectedExercise] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(true)
-  const { unitSystem } = useSettingsStore()
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchAnalytics()
@@ -110,6 +121,75 @@ export default function WorkoutAnalytics() {
 
   const recentPRs = personalRecords.filter((pr) => pr.isRecent).length
 
+  // Clear all workout data
+  const handleClearAll = async () => {
+    setIsClearing(true)
+    try {
+      await workoutAnalyticsApi.clearAll()
+      toast({
+        title: 'Workout data cleared',
+        description: 'All workout analytics and history have been deleted.',
+      })
+      setShowResetDialog(false)
+      fetchAnalytics()
+    } catch (error) {
+      console.error('Failed to clear workout data:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to clear workout data.',
+      })
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
+  // Clear recent workout data (last 7 days)
+  const handleClearRecent = async () => {
+    setIsClearing(true)
+    try {
+      await workoutAnalyticsApi.clearRecent()
+      toast({
+        title: 'Recent data cleared',
+        description: 'Last 7 days of workout data have been deleted.',
+      })
+      setShowResetDialog(false)
+      fetchAnalytics()
+    } catch (error) {
+      console.error('Failed to clear recent data:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to clear recent data.',
+      })
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
+  // Clear just the last workout session
+  const handleClearLastSession = async () => {
+    setIsClearing(true)
+    try {
+      await workoutAnalyticsApi.clearLastSession()
+      toast({
+        title: 'Last session cleared',
+        description: 'Your most recent workout session has been deleted.',
+      })
+      setShowResetDialog(false)
+      fetchAnalytics()
+    } catch (error) {
+      console.error('Failed to clear last session:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to clear last session.',
+      })
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -118,17 +198,102 @@ export default function WorkoutAnalytics() {
           <h1 className="text-3xl font-display font-bold">Workout Analytics</h1>
           <p className="text-muted-foreground mt-1">Track your training progress and performance</p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Select period" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-            <SelectItem value="1y">Last year</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowResetDialog(true)}
+            className="text-destructive hover:text-destructive"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset Analytics
+          </Button>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      {/* Reset Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Reset Workout Analytics
+            </DialogTitle>
+            <DialogDescription>
+              Choose what data you want to clear. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <Button
+              variant="destructive"
+              className="w-full justify-start h-auto py-3"
+              onClick={handleClearAll}
+              disabled={isClearing}
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 mr-3" />
+              )}
+              <div className="text-left">
+                <p className="font-semibold">Clear All Workout Analytics & History</p>
+                <p className="text-xs opacity-80">Deletes all workout sessions, sets, and analytics</p>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-3 border-amber-500 text-amber-600 hover:bg-amber-50"
+              onClick={handleClearRecent}
+              disabled={isClearing}
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4 mr-3" />
+              )}
+              <div className="text-left">
+                <p className="font-semibold">Clear Recent Workout Analytics</p>
+                <p className="text-xs opacity-80">Deletes last 7 days (fix wrong weight entries)</p>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-3"
+              onClick={handleClearLastSession}
+              disabled={isClearing}
+            >
+              {isClearing ? (
+                <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4 mr-3" />
+              )}
+              <div className="text-left">
+                <p className="font-semibold">Clear Last Session</p>
+                <p className="text-xs opacity-80">Deletes only your most recent workout</p>
+              </div>
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowResetDialog(false)} disabled={isClearing}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

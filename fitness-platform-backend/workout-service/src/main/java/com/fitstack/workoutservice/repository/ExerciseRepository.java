@@ -15,20 +15,18 @@ import java.util.Optional;
 public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
 
     @Query(value = "SELECT * FROM exercises e WHERE " +
-           "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
-           "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
-           "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))",
-           countQuery = "SELECT COUNT(*) FROM exercises e WHERE " +
-           "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
-           "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
-           "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))",
-           nativeQuery = true)
+            "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
+            "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
+            "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))", countQuery = "SELECT COUNT(*) FROM exercises e WHERE "
+                    +
+                    "(:search IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', CAST(:search AS VARCHAR), '%'))) AND " +
+                    "(:muscleGroup IS NULL OR LOWER(e.muscle_group) = LOWER(CAST(:muscleGroup AS VARCHAR))) AND " +
+                    "(:equipment IS NULL OR LOWER(e.equipment) = LOWER(CAST(:equipment AS VARCHAR)))", nativeQuery = true)
     Page<Exercise> findByFilters(
             @Param("search") String search,
             @Param("muscleGroup") String muscleGroup,
             @Param("equipment") String equipment,
-            Pageable pageable
-    );
+            Pageable pageable);
 
     @Query("SELECT DISTINCT e.muscleGroup FROM Exercise e WHERE e.muscleGroup IS NOT NULL ORDER BY e.muscleGroup")
     List<String> findDistinctMuscleGroups();
@@ -39,5 +37,6 @@ public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
     Optional<Exercise> findByExternalId(String externalId);
 
     boolean existsByExternalId(String externalId);
-}
 
+    boolean existsByNameIgnoreCase(String name);
+}

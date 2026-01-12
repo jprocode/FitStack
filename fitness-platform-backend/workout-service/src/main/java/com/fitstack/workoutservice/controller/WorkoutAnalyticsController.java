@@ -82,5 +82,31 @@ public class WorkoutAnalyticsController {
         List<ProgressiveOverloadDto> suggestions = analyticsService.getProgressiveOverloadSuggestions(userId);
         return ResponseEntity.ok(suggestions);
     }
-}
 
+    /**
+     * Clear all workout analytics and history
+     */
+    @DeleteMapping("/clear-all")
+    public ResponseEntity<Void> clearAllWorkoutData(@RequestHeader("X-User-Id") Long userId) {
+        analyticsService.clearAllWorkoutData(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Clear recent workout analytics (last 7 days) - for correcting wrong inputs
+     */
+    @DeleteMapping("/clear-recent")
+    public ResponseEntity<Void> clearRecentWorkoutData(@RequestHeader("X-User-Id") Long userId) {
+        analyticsService.clearRecentWorkoutData(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Clear just the last workout session
+     */
+    @DeleteMapping("/clear-last-session")
+    public ResponseEntity<Void> clearLastSession(@RequestHeader("X-User-Id") Long userId) {
+        analyticsService.clearLastSession(userId);
+        return ResponseEntity.noContent().build();
+    }
+}

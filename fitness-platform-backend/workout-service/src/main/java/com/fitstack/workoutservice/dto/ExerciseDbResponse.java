@@ -14,7 +14,8 @@ public class ExerciseDbResponse {
     private String target;
     private List<String> secondaryMuscles;
     private List<String> instructions;
-    
+
+    // GIF URL - we capture it but don't store it yet
     @JsonProperty("gifUrl")
     private String gifUrl;
 }
