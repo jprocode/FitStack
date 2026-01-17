@@ -25,6 +25,7 @@
         <module>user-service</module>
         <module>workout-service</module>
         <module>nutrition-service</module>
+        <module>fitstack-monolith</module>
     </modules>
 
     <properties>
