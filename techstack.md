@@ -156,7 +156,7 @@ A comprehensive overview of all technologies used in the FitStack fitness and nu
 
 | API | What It Does | Why It's Used |
 |-----|--------------|---------------|
-| **ExerciseDB API** | Exercise database | Provides comprehensive exercise library with instructions, muscles targeted, and equipment needed. Seeds the exercise database. |
+| **ExerciseDB API** | Exercise database | Provides 847 exercises across 12 equipment types and 13 muscle groups. Imported via REST API and stored locally. |
 | **USDA FoodData Central** | Food & nutrition data | Official U.S. government source for food nutrition information. Powers food search and macro tracking. |
 | **OpenAI / Claude** | AI meal generation | Generates personalized meal plans based on user preferences, dietary restrictions, and macro targets. |
 
@@ -164,37 +164,34 @@ A comprehensive overview of all technologies used in the FitStack fitness and nu
 
 ## Database Structure
 
-Each microservice has its own dedicated PostgreSQL database:
+Monolith uses separate PostgreSQL databases for data isolation:
 
-| Database | Service | Primary Tables |
-|----------|---------|----------------|
-| `fitness_users` | User Service | users, user_profiles, body_metrics, goals |
-| `fitness_workouts` | Workout Service | exercises, workout_templates, workout_plans, workout_sessions, workout_sets |
-| `fitness_nutrition` | Nutrition Service | foods, meals, meal_foods, meal_plans |
+| Database | Module | Primary Tables |
+|----------|--------|----------------|
+| `fitness_users` | User Module | users, user_profiles, body_metrics, goals |
+| `fitness_workouts` | Workout Module | exercises (847 rows), workout_templates, workout_plans, workout_sessions, workout_sets |
+| `fitness_nutrition` | Nutrition Module | foods, meals, meal_foods, meal_plans |
 
 ---
 
 ## Port Assignments
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Eureka Server | 8761 | Service registry dashboard |
-| API Gateway | 8080 | Single entry point for all client requests |
-| User Service | 8081 | Authentication & user management |
-| Workout Service | 8082 | Exercise library & workout tracking |
-| Nutrition Service | 8083 | Food tracking & meal planning |
+| Component | Port | Description |
+|-----------|------|-------------|
 | Frontend (Dev) | 5173 | Vite development server |
+| Backend API | 8080 | Spring Boot monolith |
+| PostgreSQL | 5432 | Database server |
 
 ---
 
 ## Architecture Pattern
 
-**Microservices Architecture** with:
-- **API Gateway Pattern** - Single entry point
-- **Service Discovery** - Dynamic service location
-- **Database per Service** - Data isolation
+**Modular Monolith Architecture** with:
+- **User Module** - Authentication, profiles, body metrics, goals
+- **Workout Module** - 847 exercises, templates, plans, sessions, analytics
+- **Nutrition Module** - Food search, meal logging, AI meal plans
 - **JWT Authentication** - Stateless security
-- **WebSocket** - Real-time communication
+- **WebSocket** - Real-time workout sessions
 
 ---
 

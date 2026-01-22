@@ -14,6 +14,8 @@ public class AuthResponse {
     private String token;
     private String tokenType;
     private Long expiresIn;
+    private String refreshToken;
+    private Long refreshTokenExpiresIn;
     private UserDto user;
 
     @Data
@@ -27,4 +29,3 @@ public class AuthResponse {
         private String lastName;
     }
 }
-

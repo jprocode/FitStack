@@ -7,4 +7,10 @@ Architecture.md
 DEMO.md
 DEPLOYMENT.md
 techstack.md
+renderdeploy.md
 
+# Deployment secrets - NEVER commit these
+.env.deploy
+.env.local
+.env.production.local
+*.local.properties

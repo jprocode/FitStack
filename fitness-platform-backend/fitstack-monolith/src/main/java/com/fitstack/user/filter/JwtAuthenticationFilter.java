@@ -1,6 +1,7 @@
 package com.fitstack.user.filter;
 
 import com.fitstack.user.config.JwtUtil;
+import com.fitstack.user.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,14 +26,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
@@ -43,8 +44,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
-        
+
         try {
+            // Check if token is blacklisted
+            String jti = jwtUtil.extractJti(jwt);
+            if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
+                logger.warn("Rejected blacklisted token with JTI: " + jti);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token has been invalidated\"}");
+                return;
+            }
+
             userEmail = jwtUtil.extractEmail(jwt);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -54,17 +64,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
-                            userDetails.getAuthorities()
-                    );
+                            userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    
+
                     // Extract user ID from JWT
                     Long userId = jwtUtil.extractUserId(jwt);
-                    
+
                     // Set user ID as request attribute for easy access
                     request.setAttribute("userId", userId);
-                    
+
                     // Wrap request to add X-User-Id header for controllers using @RequestHeader
                     HttpServletRequest wrappedRequest = new UserIdHeaderWrapper(request, userId);
                     filterChain.doFilter(wrappedRequest, response);
@@ -77,18 +86,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-    
+
     /**
      * Request wrapper that adds X-User-Id header
      */
     private static class UserIdHeaderWrapper extends HttpServletRequestWrapper {
         private final Long userId;
-        
+
         public UserIdHeaderWrapper(HttpServletRequest request, Long userId) {
             super(request);
             this.userId = userId;
         }
-        
+
         @Override
         public String getHeader(String name) {
             if ("X-User-Id".equalsIgnoreCase(name)) {
@@ -96,17 +105,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             return super.getHeader(name);
         }
-        
+
         @Override
         public Enumeration<String> getHeaders(String name) {
             if ("X-User-Id".equalsIgnoreCase(name)) {
                 return Collections.enumeration(
-                    userId != null ? Collections.singletonList(userId.toString()) : Collections.emptyList()
-                );
+                        userId != null ? Collections.singletonList(userId.toString()) : Collections.emptyList());
             }
             return super.getHeaders(name);
         }
-        
+
         @Override
         public Enumeration<String> getHeaderNames() {
             List<String> names = new ArrayList<>(Collections.list(super.getHeaderNames()));
@@ -117,4 +125,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 }
-

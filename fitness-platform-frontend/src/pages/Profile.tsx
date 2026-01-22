@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { userApi } from '@/lib/api'
+import { userApi, authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { UnitToggle } from '@/components/UnitToggle'
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2, User, Settings as SettingsIcon } from 'lucide-react'
+import { Loader2, User, Settings as SettingsIcon, Trash2, AlertTriangle } from 'lucide-react'
 import type { UserProfile } from '@/types/auth'
 import { cmToFeetInches, feetInchesToCm } from '@/lib/unitConversions'
 
@@ -45,7 +45,10 @@ const activityLevelOptions = [
 export default function Profile() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const { updateUser } = useAuthStore()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const { updateUser, logout } = useAuthStore()
   const { unitSystem } = useSettingsStore()
   const { toast } = useToast()
 
@@ -115,7 +118,6 @@ export default function Profile() {
         birthDate: data.birthDate || null,
         gender: data.gender || null,
         activityLevel: data.activityLevel || null,
-        // We could send preferredUnit here if we added it to the form/DTO usage in frontend API call
       })
       const profile: UserProfile = response.data
       updateUser({ firstName: profile.firstName, lastName: profile.lastName })
@@ -131,6 +133,36 @@ export default function Profile() {
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Password required',
+        description: 'Please enter your password to confirm deletion.',
+      })
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await authApi.deleteAccount(deletePassword)
+      toast({
+        title: 'Account deleted',
+        description: 'Your account has been permanently deleted.',
+      })
+      logout()
+      window.location.href = '/login'
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Deletion failed',
+        description: 'Failed to delete account. Please check your password.',
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -300,8 +332,81 @@ export default function Profile() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Danger Zone - Delete Account */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+              <CardDescription>Irreversible account actions</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!showDeleteConfirm ? (
+            <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+              <div className="space-y-0.5">
+                <p className="font-medium">Delete Account</p>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all data
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete Account
+              </Button>
+            </div>
+          ) : (
+            <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5 space-y-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                <div>
+                  <p className="font-medium text-destructive">Are you absolutely sure?</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This action cannot be undone. This will permanently delete your account,
+                    workouts, meal logs, and all associated data.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deletePassword">Enter your password to confirm</Label>
+                <Input
+                  id="deletePassword"
+                  type="password"
+                  placeholder="Your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setDeletePassword('')
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting || !deletePassword}
+                >
+                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Yes, Delete My Account
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
-
-

@@ -43,6 +43,11 @@ export const authApi = {
     api.post('/users/register', data),
   login: (data: { email: string; password: string }) =>
     api.post('/users/login', data),
+  logout: () => api.post('/users/logout'),
+  refresh: (refreshToken: string) =>
+    api.post('/users/refresh', { refreshToken }),
+  deleteAccount: (password: string) =>
+    api.delete('/users/account', { data: { password } }),
 }
 
 // User API
