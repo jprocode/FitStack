@@ -20,6 +20,7 @@ public class CorsConfig {
                 configuration.setAllowedOrigins(Arrays.asList(
                                 "http://localhost:5173",
                                 "http://localhost:3000",
+                                "https://fitstack-jade.vercel.app",
                                 "https://fitstack-app.vercel.app",
                                 "https://fitstack.vercel.app",
                                 "https://fit-stack.vercel.app"));
