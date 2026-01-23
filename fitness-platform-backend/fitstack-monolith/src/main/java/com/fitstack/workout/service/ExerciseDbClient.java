@@ -23,8 +23,11 @@ public class ExerciseDbClient {
     @Value("${exercisedb.api.key}")
     private String apiKey;
 
-    private static final String API_URL = "https://exercisedb.p.rapidapi.com";
-    private static final String API_HOST = "exercisedb.p.rapidapi.com";
+    @Value("${exercisedb.api.url:https://exercisedb.p.rapidapi.com}")
+    private String apiUrl;
+
+    @Value("${exercisedb.api.host:exercisedb.p.rapidapi.com}")
+    private String apiHost;
 
     // Equipment types to fetch (hypertrophy relevant only)
     private static final String[] EQUIPMENT_TYPES = {
@@ -87,7 +90,7 @@ public class ExerciseDbClient {
             try {
                 String encodedEquipment = java.net.URLEncoder.encode(equipment, java.nio.charset.StandardCharsets.UTF_8)
                         .replace("+", "%20");
-                String uriString = API_URL + "/exercises/equipment/" + encodedEquipment +
+                String uriString = apiUrl + "/exercises/equipment/" + encodedEquipment +
                         "?limit=" + batchSize + "&offset=" + offset;
 
                 apiCallCount.incrementAndGet();
@@ -95,7 +98,7 @@ public class ExerciseDbClient {
                 List<ExerciseDbResponse> batch = webClient.get()
                         .uri(java.net.URI.create(uriString))
                         .header("X-RapidAPI-Key", apiKey)
-                        .header("X-RapidAPI-Host", API_HOST)
+                        .header("X-RapidAPI-Host", apiHost)
                         .retrieve()
                         .bodyToMono(new ParameterizedTypeReference<List<ExerciseDbResponse>>() {
                         })
