@@ -53,14 +53,14 @@ export const authApi = {
 // User API
 export const userApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: Record<string, unknown>) => api.put('/users/profile', data),
+  updateProfile: (data: object) => api.put('/users/profile', data),
   getCalorieTargets: () => api.get('/users/profile/calorie-targets'),
 }
 
 // Metrics API
 export const metricsApi = {
   getMetrics: () => api.get('/users/metrics'),
-  createMetric: (data: Record<string, unknown>) => api.post('/users/metrics', data),
+  createMetric: (data: object) => api.post('/users/metrics', data),
   deleteMetric: (id: number) => api.delete(`/users/metrics/${id}`),
   getLatestMetric: () => api.get('/users/metrics/latest'),
 }
@@ -69,7 +69,7 @@ export const metricsApi = {
 export const goalsApi = {
   getGoals: () => api.get('/users/goals'),
   getActiveGoals: () => api.get('/users/goals/active'),
-  createGoal: (data: Record<string, unknown>) => api.post('/users/goals', data),
+  createGoal: (data: object) => api.post('/users/goals', data),
   updateGoalStatus: (id: number, status: string) =>
     api.put(`/users/goals/${id}/status`, null, { params: { status } }),
   deleteGoal: (id: number) => api.delete(`/users/goals/${id}`),
@@ -77,7 +77,7 @@ export const goalsApi = {
 
 // Exercise API
 export const exerciseApi = {
-  getExercises: (params?: { search?: string; muscleGroup?: string; equipment?: string }) =>
+  getExercises: (params?: { search?: string; muscleGroup?: string; equipment?: string; page?: number; size?: number }) =>
     api.get('/workouts/exercises', { params }),
   getExercise: (id: number) => api.get(`/workouts/exercises/${id}`),
   getMuscleGroups: () => api.get('/workouts/exercises/muscle-groups'),
@@ -88,8 +88,8 @@ export const exerciseApi = {
 export const templateApi = {
   getTemplates: () => api.get('/workouts/templates'),
   getTemplate: (id: number) => api.get(`/workouts/templates/${id}`),
-  createTemplate: (data: Record<string, unknown>) => api.post('/workouts/templates', data),
-  updateTemplate: (id: number, data: Record<string, unknown>) => api.put(`/workouts/templates/${id}`, data),
+  createTemplate: (data: object) => api.post('/workouts/templates', data),
+  updateTemplate: (id: number, data: object) => api.put(`/workouts/templates/${id}`, data),
   deleteTemplate: (id: number) => api.delete(`/workouts/templates/${id}`),
 }
 
@@ -97,11 +97,11 @@ export const templateApi = {
 export const workoutPlanApi = {
   getPlans: () => api.get('/workouts/plans'),
   getPlan: (id: number) => api.get(`/workouts/plans/${id}`),
-  createPlan: (data: Record<string, unknown>) => api.post('/workouts/plans', data),
-  updatePlan: (id: number, data: Record<string, unknown>) => api.put(`/workouts/plans/${id}`, data),
+  createPlan: (data: object) => api.post('/workouts/plans', data),
+  updatePlan: (id: number, data: object) => api.put(`/workouts/plans/${id}`, data),
   deletePlan: (id: number) => api.delete(`/workouts/plans/${id}`),
-  addDay: (planId: number, data: Record<string, unknown>) => api.post(`/workouts/plans/${planId}/days`, data),
-  updateDay: (planId: number, dayId: number, data: Record<string, unknown>) =>
+  addDay: (planId: number, data: object) => api.post(`/workouts/plans/${planId}/days`, data),
+  updateDay: (planId: number, dayId: number, data: object) =>
     api.put(`/workouts/plans/${planId}/days/${dayId}`, data),
   deleteDay: (planId: number, dayId: number) => api.delete(`/workouts/plans/${planId}/days/${dayId}`),
   // Primary plan methods
@@ -115,7 +115,7 @@ export const sessionApi = {
   startSession: (data: { templateId: number }) => api.post('/workouts/sessions', data),
   startFromPlan: (planDayId: number) => api.post('/workouts/sessions/start-from-plan', { planDayId }),
   getSession: (id: number) => api.get(`/workouts/sessions/${id}`),
-  logSet: (sessionId: number, data: Record<string, unknown>) =>
+  logSet: (sessionId: number, data: object) =>
     api.post(`/workouts/sessions/${sessionId}/sets`, data),
   completeSession: (id: number, data?: { notes?: string }) =>
     api.put(`/workouts/sessions/${id}/complete`, data),
@@ -135,8 +135,8 @@ export const customFoodApi = {
   getMyFoods: () => api.get('/nutrition/my-foods'),
   searchMyFoods: (query: string) => api.get('/nutrition/my-foods/search', { params: { q: query } }),
   getById: (id: number) => api.get(`/nutrition/my-foods/${id}`),
-  create: (data: Record<string, unknown>) => api.post('/nutrition/my-foods', data),
-  update: (id: number, data: Record<string, unknown>) => api.put(`/nutrition/my-foods/${id}`, data),
+  create: (data: object) => api.post('/nutrition/my-foods', data),
+  update: (id: number, data: object) => api.put(`/nutrition/my-foods/${id}`, data),
   delete: (id: number) => api.delete(`/nutrition/my-foods/${id}`),
 }
 
@@ -147,7 +147,7 @@ export const mealApi = {
   getMealById: (id: number) => api.get(`/nutrition/meals/${id}`),
   getTodaysMeals: () => api.get('/nutrition/meals/today'),
   getDailyMacros: (date: string) => api.get('/nutrition/meals/daily', { params: { date } }),
-  createMeal: (data: Record<string, unknown>) => api.post('/nutrition/meals', data),
+  createMeal: (data: object) => api.post('/nutrition/meals', data),
   deleteMeal: (id: number) => api.delete(`/nutrition/meals/${id}`),
 }
 
@@ -155,7 +155,7 @@ export const mealApi = {
 export const mealPlanApi = {
   getMealPlans: () => api.get('/nutrition/meal-plans'),
   getMealPlan: (id: number) => api.get(`/nutrition/meal-plans/${id}`),
-  generateMealPlan: (data: Record<string, unknown>) => api.post('/nutrition/meal-plans/generate', data),
+  generateMealPlan: (data: object) => api.post('/nutrition/meal-plans/generate', data),
   deleteMealPlan: (id: number) => api.delete(`/nutrition/meal-plans/${id}`),
 }
 

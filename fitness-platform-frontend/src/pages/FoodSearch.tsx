@@ -9,24 +9,24 @@ import { useToast } from '@/components/ui/use-toast'
 import { Search, Plus, Flame, Beef, Wheat, Droplets } from 'lucide-react'
 
 // Debounce hook
-function useDebounce<T extends (...args: unknown[]) => void>(
-  callback: T,
+function useDebounce(
+  callback: (query: string) => void,
   delay: number
-): T {
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
+): (query: string) => void {
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   const debouncedCallback = useCallback(
-    (...args: Parameters<T>) => {
+    (query: string) => {
       if (timeoutId) {
         clearTimeout(timeoutId)
       }
       const newTimeoutId = setTimeout(() => {
-        callback(...args)
+        callback(query)
       }, delay)
       setTimeoutId(newTimeoutId)
     },
     [callback, delay, timeoutId]
-  ) as T
+  )
 
   return debouncedCallback
 }

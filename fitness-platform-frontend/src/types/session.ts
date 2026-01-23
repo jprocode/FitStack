@@ -20,6 +20,7 @@ export interface WorkoutSet {
   id: number
   sessionId: number
   exerciseId: number
+  exercise?: { id: number; name: string; muscleGroup?: string }
   setNumber: number
   repsCompleted: number
   weightUsed: number
