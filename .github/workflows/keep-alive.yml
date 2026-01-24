@@ -1,0 +1,90 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    # Run every 5 minutes between 7 AM - 10 PM EST
+    # EST = UTC-5, so 7 AM EST = 12:00 UTC, 10 PM EST = 03:00 UTC next day
+    # Cron runs at: 12:00-23:59 UTC and 00:00-02:59 UTC
+    - cron: '*/5 12-23,0-2 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Random delay (0-60 seconds)
+        run: |
+          DELAY=$((RANDOM % 61))
+          echo "Waiting $DELAY seconds before ping..."
+          sleep $DELAY
+
+      - name: Select random user agent
+        id: ua
+        run: |
+          USER_AGENTS=(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
+          )
+          RANDOM_INDEX=$((RANDOM % ${#USER_AGENTS[@]}))
+          echo "user_agent=${USER_AGENTS[$RANDOM_INDEX]}" >> $GITHUB_OUTPUT
+
+      - name: Select random endpoint
+        id: endpoint
+        run: |
+          # 70% health check, 20% exercises, 10% muscle groups
+          RAND=$((RANDOM % 100))
+          if [ $RAND -lt 70 ]; then
+            ENDPOINT="https://fitstack-backend.onrender.com/actuator/health"
+          elif [ $RAND -lt 90 ]; then
+            ENDPOINT="https://fitstack-backend.onrender.com/api/workouts/exercises?page=0&size=1"
+          else
+            ENDPOINT="https://fitstack-backend.onrender.com/api/workouts/exercises/muscle-groups"
+          fi
+          echo "url=$ENDPOINT" >> $GITHUB_OUTPUT
+          echo "Selected endpoint: $ENDPOINT"
+
+      - name: Ping Render backend
+        run: |
+          echo "Pinging: ${{ steps.endpoint.outputs.url }}"
+          
+          # Random accept headers
+          ACCEPTS=(
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+            "application/json, text/plain, */*"
+            "*/*"
+          )
+          ACCEPT_INDEX=$((RANDOM % ${#ACCEPTS[@]}))
+          
+          # Make the request with browser-like headers
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 120 \
+            -H "User-Agent: ${{ steps.ua.outputs.user_agent }}" \
+            -H "Accept: ${ACCEPTS[$ACCEPT_INDEX]}" \
+            -H "Accept-Language: en-US,en;q=0.9" \
+            -H "Accept-Encoding: gzip, deflate, br" \
+            -H "Connection: keep-alive" \
+            -H "Cache-Control: no-cache" \
+            "${{ steps.endpoint.outputs.url }}" || echo "000")
+          
+          echo "Response status: $HTTP_STATUS"
+          
+          # Log result but don't fail the workflow
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Backend is alive!"
+          elif [ "$HTTP_STATUS" = "000" ]; then
+            echo "⚠️ Request timed out (backend may be cold starting)"
+          else
+            echo "⚠️ Got status $HTTP_STATUS (backend may be starting up)"
+          fi
+          
+          # Always exit successfully to avoid failed workflow notifications
+          exit 0
+
+      - name: Log timestamp
+        run: |
+          echo "Ping completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "EST equivalent: $(TZ='America/New_York' date '+%Y-%m-%d %H:%M:%S EST')"
