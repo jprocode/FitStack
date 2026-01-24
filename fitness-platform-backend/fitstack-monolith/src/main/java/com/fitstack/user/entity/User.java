@@ -25,8 +25,11 @@ public class User {
     @Column(unique = true, nullable = false, length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash; // Nullable for OAuth-only users
+
+    @Column(name = "google_id", unique = true, length = 255)
+    private String googleId; // For Google OAuth users
 
     @Column(name = "first_name", length = 100)
     private String firstName;
@@ -45,4 +48,3 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile profile;
 }
-

@@ -27,6 +27,9 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private Long expiration;
 
+    @Value("${jwt.expiration.remember-me:2592000000}")
+    private Long rememberMeExpiration; // 30 days default
+
     @PostConstruct
     public void validateSecret() {
         if (secret == null || secret.length() < 32) {
@@ -44,18 +47,23 @@ public class JwtUtil {
     }
 
     public String generateToken(String email, Long userId) {
+        return generateToken(email, userId, false);
+    }
+
+    public String generateToken(String email, Long userId, boolean rememberMe) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("jti", UUID.randomUUID().toString()); // JWT ID for blacklisting
-        return createToken(claims, email);
+        long tokenExpiration = rememberMe ? rememberMeExpiration : expiration;
+        return createToken(claims, email, tokenExpiration);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, long tokenExpiration) {
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(new Date(System.currentTimeMillis() + tokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }

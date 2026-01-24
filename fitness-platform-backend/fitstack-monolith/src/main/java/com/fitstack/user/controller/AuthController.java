@@ -2,6 +2,7 @@ package com.fitstack.user.controller;
 
 import com.fitstack.user.dto.*;
 import com.fitstack.user.service.AuthService;
+import com.fitstack.user.service.GoogleOAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleOAuthService googleOAuthService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -33,6 +35,13 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         String ipAddress = getClientIpAddress(httpRequest);
         AuthResponse response = authService.login(request, ipAddress);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<AuthResponse> googleAuth(
+            @Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = googleOAuthService.authenticateWithGoogle(request);
         return ResponseEntity.ok(response);
     }
 

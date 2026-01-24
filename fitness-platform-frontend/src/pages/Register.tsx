@@ -7,9 +7,12 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
+import { PasswordStrength } from '@/components/ui/password-strength'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
 import { Activity, Loader2 } from 'lucide-react'
 import type { AuthResponse } from '@/types/auth'
 
@@ -35,10 +38,13 @@ export default function Register() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   })
+
+  const password = watch('password', '')
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true)
@@ -50,7 +56,13 @@ export default function Register() {
         lastName: data.lastName,
       })
       const authData: AuthResponse = response.data
-      setAuth(authData.token, authData.user)
+      setAuth(
+        authData.token,
+        authData.user,
+        authData.expiresIn,
+        authData.refreshToken,
+        authData.refreshTokenExpiresIn
+      )
       toast({
         title: 'Account created!',
         description: 'Welcome to FitStack.',
@@ -71,7 +83,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      
+
       <Card className="w-full max-w-md glass relative">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -119,12 +131,12 @@ export default function Register() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="••••••••"
                 {...register('password')}
               />
+              <PasswordStrength password={password} />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
@@ -132,9 +144,8 @@ export default function Register() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder="••••••••"
                 {...register('confirmPassword')}
               />
@@ -147,6 +158,19 @@ export default function Register() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
+
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Sign-Up */}
+            <GoogleAuthButton mode="register" />
           </form>
 
           <div className="mt-6 text-center text-sm">

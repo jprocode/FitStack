@@ -96,9 +96,10 @@ public class AuthService {
 
         // Successful login - clear rate limit
         rateLimitService.recordSuccessfulLogin(ipAddress);
-        log.info("AUTH: Successful login - User: {}, IP: {}", user.getId(), ipAddress);
+        log.info("AUTH: Successful login - User: {}, IP: {}, RememberMe: {}", user.getId(), ipAddress,
+                request.isRememberMe());
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), request.isRememberMe());
         RefreshToken refreshToken = createRefreshToken(user.getId());
 
         return buildAuthResponse(user, token, refreshToken.getToken());

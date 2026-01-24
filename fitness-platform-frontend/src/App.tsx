@@ -28,6 +28,7 @@ import WorkoutPlanList from '@/pages/WorkoutPlanList'
 import WorkoutPlanBuilder from '@/pages/WorkoutPlanBuilder'
 import StartWorkout from '@/pages/StartWorkout'
 import { Toaster } from '@/components/ui/toaster'
+import { SessionExpiryModal } from '@/components/auth/SessionExpiryModal'
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -76,6 +77,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Toaster />
+      <SessionExpiryModal />
     </>
   )
 }

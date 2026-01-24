@@ -11,14 +11,19 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
+public class GoogleAuthRequest {
 
+    // Access token from Google OAuth (used to verify with Google's API)
+    private String idToken;
+
+    // User info from frontend (fetched from Google's userinfo endpoint)
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    private String password;
+    @NotBlank(message = "Google ID is required")
+    private String googleId;
 
-    private boolean rememberMe;
+    private String firstName;
+    private String lastName;
 }

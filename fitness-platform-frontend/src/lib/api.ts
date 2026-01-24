@@ -1,5 +1,6 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/store/authStore'
+import type { AuthResponse } from '@/types/auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
@@ -10,13 +11,101 @@ export const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+// Track if we're currently refreshing to prevent multiple refresh calls
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void
+  reject: (reason?: unknown) => void
+}> = []
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
     }
+  })
+  failedQueue = []
+}
+
+// Function to refresh tokens
+async function refreshTokens(): Promise<string | null> {
+  const store = useAuthStore.getState()
+  const refreshToken = store.refreshToken
+
+  if (!refreshToken) {
+    return null
+  }
+
+  try {
+    // Use a separate axios instance to avoid interceptor loops
+    const response = await axios.post<AuthResponse>(
+      `${API_BASE_URL}/users/refresh`,
+      { refreshToken },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+
+    const { token, expiresIn, refreshToken: newRefreshToken, refreshTokenExpiresIn } = response.data
+
+    // Update store with new tokens
+    store.updateTokens(token, expiresIn, newRefreshToken, refreshTokenExpiresIn)
+
+    return token
+  } catch (error) {
+    // Refresh failed - logout user
+    store.logout()
+    return null
+  }
+}
+
+// Request interceptor to add auth token and check expiration
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const store = useAuthStore.getState()
+    const token = store.token
+
+    // Skip auth for login/register/refresh endpoints
+    const publicEndpoints = ['/users/login', '/users/register', '/users/refresh']
+    const isPublicEndpoint = publicEndpoints.some(endpoint =>
+      config.url?.includes(endpoint)
+    )
+
+    if (token && !isPublicEndpoint) {
+      // Check if token is expiring soon and needs refresh
+      if (store.isTokenExpiringSoon() && !store.isRefreshTokenExpired()) {
+        if (!isRefreshing) {
+          isRefreshing = true
+          try {
+            const newToken = await refreshTokens()
+            isRefreshing = false
+            processQueue(null, newToken)
+            if (newToken) {
+              config.headers.Authorization = `Bearer ${newToken}`
+            }
+          } catch (error) {
+            isRefreshing = false
+            processQueue(error as Error, null)
+          }
+        } else {
+          // Wait for the ongoing refresh to complete
+          return new Promise((resolve, reject) => {
+            failedQueue.push({
+              resolve: (newToken) => {
+                config.headers.Authorization = `Bearer ${newToken}`
+                resolve(config)
+              },
+              reject: (err) => {
+                reject(err)
+              },
+            })
+          })
+        }
+      } else {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+
     return config
   },
   (error) => {
@@ -24,15 +113,58 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle errors
+// Response interceptor to handle errors and retry failed requests
 api.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid, logout user
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const store = useAuthStore.getState()
+
+    // If 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Check if refresh token is still valid
+      if (store.refreshToken && !store.isRefreshTokenExpired()) {
+        if (isRefreshing) {
+          // Wait for refresh to complete
+          return new Promise((resolve, reject) => {
+            failedQueue.push({
+              resolve: (token) => {
+                originalRequest.headers.Authorization = `Bearer ${token}`
+                resolve(api(originalRequest))
+              },
+              reject: (err) => reject(err),
+            })
+          })
+        }
+
+        originalRequest._retry = true
+        isRefreshing = true
+
+        try {
+          const newToken = await refreshTokens()
+          isRefreshing = false
+          processQueue(null, newToken)
+
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`
+            return api(originalRequest)
+          }
+        } catch (refreshError) {
+          isRefreshing = false
+          processQueue(refreshError as Error, null)
+        }
+      }
+
+      // Refresh token expired or refresh failed - show modal or logout
+      if (store.isRefreshTokenExpired()) {
+        // Show session expiry modal instead of immediate logout
+        store.setShowSessionExpiryModal(true)
+      } else {
+        store.logout()
+        window.location.href = '/login'
+      }
     }
+
     return Promise.reject(error)
   }
 )
@@ -41,7 +173,7 @@ api.interceptors.response.use(
 export const authApi = {
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) =>
     api.post('/users/register', data),
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email: string; password: string; rememberMe?: boolean }) =>
     api.post('/users/login', data),
   logout: () => api.post('/users/logout'),
   refresh: (refreshToken: string) =>
@@ -183,4 +315,3 @@ export const workoutAnalyticsApi = {
 }
 
 export default api
-

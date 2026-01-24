@@ -52,6 +52,7 @@ public class SecurityConfig {
                                                                 "/api/users/register",
                                                                 "/api/users/login",
                                                                 "/api/users/refresh",
+                                                                "/api/users/oauth/google",
                                                                 "/api/workouts/exercises",
                                                                 "/api/workouts/exercises/**",
                                                                 "/actuator/health",
