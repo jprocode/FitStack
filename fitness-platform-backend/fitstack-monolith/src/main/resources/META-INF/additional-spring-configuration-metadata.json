@@ -1,0 +1,169 @@
+{
+    "properties": [
+        {
+            "name": "spring.datasource.users.jdbc-url",
+            "type": "java.lang.String",
+            "description": "JDBC URL for users database"
+        },
+        {
+            "name": "spring.datasource.users.username",
+            "type": "java.lang.String",
+            "description": "Username for users database"
+        },
+        {
+            "name": "spring.datasource.users.password",
+            "type": "java.lang.String",
+            "description": "Password for users database"
+        },
+        {
+            "name": "spring.datasource.users.driver-class-name",
+            "type": "java.lang.String",
+            "description": "Driver class for users database"
+        },
+        {
+            "name": "spring.datasource.users.hikari.maximum-pool-size",
+            "type": "java.lang.Integer",
+            "description": "HikariCP max pool size for users"
+        },
+        {
+            "name": "spring.datasource.users.hikari.minimum-idle",
+            "type": "java.lang.Integer",
+            "description": "HikariCP min idle for users"
+        },
+        {
+            "name": "spring.datasource.users.hikari.connection-timeout",
+            "type": "java.lang.Long",
+            "description": "HikariCP connection timeout for users"
+        },
+        {
+            "name": "spring.datasource.workouts.jdbc-url",
+            "type": "java.lang.String",
+            "description": "JDBC URL for workouts database"
+        },
+        {
+            "name": "spring.datasource.workouts.username",
+            "type": "java.lang.String",
+            "description": "Username for workouts database"
+        },
+        {
+            "name": "spring.datasource.workouts.password",
+            "type": "java.lang.String",
+            "description": "Password for workouts database"
+        },
+        {
+            "name": "spring.datasource.workouts.driver-class-name",
+            "type": "java.lang.String",
+            "description": "Driver class for workouts database"
+        },
+        {
+            "name": "spring.datasource.workouts.hikari.maximum-pool-size",
+            "type": "java.lang.Integer",
+            "description": "HikariCP max pool size for workouts"
+        },
+        {
+            "name": "spring.datasource.workouts.hikari.minimum-idle",
+            "type": "java.lang.Integer",
+            "description": "HikariCP min idle for workouts"
+        },
+        {
+            "name": "spring.datasource.nutrition.jdbc-url",
+            "type": "java.lang.String",
+            "description": "JDBC URL for nutrition database"
+        },
+        {
+            "name": "spring.datasource.nutrition.username",
+            "type": "java.lang.String",
+            "description": "Username for nutrition database"
+        },
+        {
+            "name": "spring.datasource.nutrition.password",
+            "type": "java.lang.String",
+            "description": "Password for nutrition database"
+        },
+        {
+            "name": "spring.datasource.nutrition.driver-class-name",
+            "type": "java.lang.String",
+            "description": "Driver class for nutrition database"
+        },
+        {
+            "name": "spring.datasource.nutrition.hikari.maximum-pool-size",
+            "type": "java.lang.Integer",
+            "description": "HikariCP max pool size for nutrition"
+        },
+        {
+            "name": "spring.datasource.nutrition.hikari.minimum-idle",
+            "type": "java.lang.Integer",
+            "description": "HikariCP min idle for nutrition"
+        },
+        {
+            "name": "jwt.secret",
+            "type": "java.lang.String",
+            "description": "JWT signing secret key"
+        },
+        {
+            "name": "jwt.expiration",
+            "type": "java.lang.Long",
+            "description": "JWT access token expiration in ms"
+        },
+        {
+            "name": "jwt.refresh-expiration",
+            "type": "java.lang.Long",
+            "description": "JWT refresh token expiration in ms"
+        },
+        {
+            "name": "auth.use-cookies",
+            "type": "java.lang.Boolean",
+            "description": "Whether to use cookie-based auth"
+        },
+        {
+            "name": "auth.secure-cookies",
+            "type": "java.lang.Boolean",
+            "description": "Whether cookies are secure (HTTPS only)"
+        },
+        {
+            "name": "auth.cookie-domain",
+            "type": "java.lang.String",
+            "description": "Cookie domain"
+        },
+        {
+            "name": "exercisedb.api.url",
+            "type": "java.lang.String",
+            "description": "ExerciseDB API base URL"
+        },
+        {
+            "name": "exercisedb.api.key",
+            "type": "java.lang.String",
+            "description": "ExerciseDB RapidAPI key"
+        },
+        {
+            "name": "exercisedb.api.host",
+            "type": "java.lang.String",
+            "description": "ExerciseDB RapidAPI host"
+        },
+        {
+            "name": "usda.api.url",
+            "type": "java.lang.String",
+            "description": "USDA Food API base URL"
+        },
+        {
+            "name": "usda.api.key",
+            "type": "java.lang.String",
+            "description": "USDA Food API key"
+        },
+        {
+            "name": "openai.api.url",
+            "type": "java.lang.String",
+            "description": "OpenAI API base URL"
+        },
+        {
+            "name": "openai.api.key",
+            "type": "java.lang.String",
+            "description": "OpenAI API key"
+        },
+        {
+            "name": "openai.model",
+            "type": "java.lang.String",
+            "description": "OpenAI model to use"
+        }
+    ]
+}
