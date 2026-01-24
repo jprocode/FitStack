@@ -88,3 +88,4 @@ jobs:
         run: |
           echo "Ping completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "EST equivalent: $(TZ='America/New_York' date '+%Y-%m-%d %H:%M:%S EST')"
+# Keep-alive workflow enabled
