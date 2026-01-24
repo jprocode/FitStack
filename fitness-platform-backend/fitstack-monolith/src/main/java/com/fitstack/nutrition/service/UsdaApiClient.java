@@ -42,7 +42,7 @@ public class UsdaApiClient {
         try {
             log.info("Searching USDA API for: {}", query);
 
-            String uri = UriComponentsBuilder.fromHttpUrl(apiUrl + "/foods/search")
+            String uri = UriComponentsBuilder.fromUriString(apiUrl + "/foods/search")
                     .queryParam("api_key", apiKey)
                     .queryParam("query", query)
                     .queryParam("pageSize", pageSize)
@@ -111,4 +111,3 @@ public class UsdaApiClient {
         return "100 g";
     }
 }
-

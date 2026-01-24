@@ -28,5 +28,6 @@ public class CustomFoodDto {
     private LocalDateTime updatedAt;
 
     // Flag to indicate this is a custom food (for frontend)
+    @Builder.Default
     private boolean isCustom = true;
 }
