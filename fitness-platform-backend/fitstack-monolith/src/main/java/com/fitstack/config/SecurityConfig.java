@@ -54,6 +54,7 @@ public class SecurityConfig {
                                                                 "/api/users/refresh",
                                                                 "/api/workouts/exercises",
                                                                 "/api/workouts/exercises/**",
+                                                                "/api/exercises/import",
                                                                 "/actuator/**",
                                                                 "/ws/**")
                                                 .permitAll()
