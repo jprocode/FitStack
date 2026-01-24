@@ -1,22 +1,26 @@
 package com.fitstack.user.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * In-memory token blacklist for invalidated JWTs.
- * Tokens are stored by their JTI (JWT ID) claim.
+ * Redis-backed token blacklist for invalidated JWTs.
+ * Tokens are stored by their JTI (JWT ID) claim with automatic TTL expiration.
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class TokenBlacklistService {
 
-    // Map of JTI to expiry time (for cleanup)
-    private final ConcurrentHashMap<String, Instant> blacklistedTokens = new ConcurrentHashMap<>();
+    private static final String BLACKLIST_PREFIX = "token:blacklist:";
+
+    private final StringRedisTemplate redisTemplate;
 
     /**
      * Add a token to the blacklist
@@ -25,11 +29,20 @@ public class TokenBlacklistService {
      * @param expiryTime When the token would naturally expire
      */
     public void blacklist(String jti, Instant expiryTime) {
-        if (jti != null) {
-            blacklistedTokens.put(jti, expiryTime);
-            log.info("Token {} added to blacklist", jti);
-            cleanupExpiredTokens();
+        if (jti == null) {
+            return;
         }
+
+        String key = BLACKLIST_PREFIX + jti;
+        Duration ttl = Duration.between(Instant.now(), expiryTime);
+
+        if (ttl.isNegative() || ttl.isZero()) {
+            // Token already expired, no need to blacklist
+            return;
+        }
+
+        redisTemplate.opsForValue().set(key, "1", ttl);
+        log.info("Token {} added to blacklist (TTL: {} seconds)", jti, ttl.toSeconds());
     }
 
     /**
@@ -39,12 +52,11 @@ public class TokenBlacklistService {
         if (jti == null) {
             return false;
         }
-        return blacklistedTokens.containsKey(jti);
+        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + jti));
     }
 
     /**
      * Blacklist all tokens for a user (used on account deletion or password change)
-     * Note: This requires storing user's token JTIs, which we'll track separately
      */
     public void blacklistAllForUser(Long userId, Set<String> tokenJtis, Instant expiryTime) {
         for (String jti : tokenJtis) {
@@ -54,18 +66,10 @@ public class TokenBlacklistService {
     }
 
     /**
-     * Remove expired tokens from blacklist (they're already invalid anyway)
+     * Get approximate count of blacklisted tokens (for monitoring)
      */
-    private void cleanupExpiredTokens() {
-        Instant now = Instant.now();
-        blacklistedTokens.entrySet().removeIf(entry -> entry.getValue().isBefore(now));
-    }
-
-    /**
-     * Get count of blacklisted tokens (for monitoring)
-     */
-    public int getBlacklistSize() {
-        cleanupExpiredTokens();
-        return blacklistedTokens.size();
+    public long getBlacklistSize() {
+        Set<String> keys = redisTemplate.keys(BLACKLIST_PREFIX + "*");
+        return keys != null ? keys.size() : 0;
     }
 }

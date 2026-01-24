@@ -1,18 +1,26 @@
 package com.fitstack.user.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * In-memory rate limiting service for various endpoints.
+ * Redis-backed rate limiting service for various endpoints.
  * Blocks IP addresses after too many failed/excessive attempts.
+ * Data persists across server restarts.
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class RateLimitService {
+
+    private static final String RATE_LIMIT_PREFIX = "ratelimit:";
+    private static final String ATTEMPTS_SUFFIX = ":attempts";
+    private static final String LOCKOUT_SUFFIX = ":lockout";
 
     // Configurable limits per endpoint type
     private static final int LOGIN_MAX_ATTEMPTS = 5;
@@ -27,9 +35,7 @@ public class RateLimitService {
     private static final int GENERAL_MAX_ATTEMPTS = 100;
     private static final long GENERAL_LOCKOUT_SECONDS = 60; // 1 minute
 
-    private static final long CLEANUP_THRESHOLD_SECONDS = 60 * 60; // 1 hour
-
-    private final ConcurrentHashMap<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
+    private final StringRedisTemplate redisTemplate;
 
     public enum EndpointType {
         LOGIN, REGISTER, REFRESH, GENERAL
@@ -39,19 +45,8 @@ public class RateLimitService {
      * Check if an IP is currently blocked for a specific endpoint
      */
     public boolean isBlocked(String ipAddress, EndpointType type) {
-        String key = buildKey(ipAddress, type);
-        AttemptInfo info = attempts.get(key);
-        if (info == null) {
-            return false;
-        }
-
-        // Check if lockout has expired
-        if (info.lockedUntil != null && Instant.now().isAfter(info.lockedUntil)) {
-            attempts.remove(key);
-            return false;
-        }
-
-        return info.lockedUntil != null && Instant.now().isBefore(info.lockedUntil);
+        String lockoutKey = buildLockoutKey(ipAddress, type);
+        return Boolean.TRUE.equals(redisTemplate.hasKey(lockoutKey));
     }
 
     /**
@@ -65,13 +60,9 @@ public class RateLimitService {
      * Get remaining lockout seconds for an IP
      */
     public long getRemainingLockoutSeconds(String ipAddress, EndpointType type) {
-        String key = buildKey(ipAddress, type);
-        AttemptInfo info = attempts.get(key);
-        if (info == null || info.lockedUntil == null) {
-            return 0;
-        }
-        long remaining = info.lockedUntil.getEpochSecond() - Instant.now().getEpochSecond();
-        return Math.max(0, remaining);
+        String lockoutKey = buildLockoutKey(ipAddress, type);
+        Long ttl = redisTemplate.getExpire(lockoutKey);
+        return ttl != null && ttl > 0 ? ttl : 0;
     }
 
     public long getRemainingLockoutSeconds(String ipAddress) {
@@ -82,27 +73,26 @@ public class RateLimitService {
      * Record a failed attempt for an endpoint
      */
     public void recordFailedAttempt(String ipAddress, EndpointType type) {
-        String key = buildKey(ipAddress, type);
+        String attemptsKey = buildAttemptsKey(ipAddress, type);
+        String lockoutKey = buildLockoutKey(ipAddress, type);
         int maxAttempts = getMaxAttempts(type);
         long lockoutSeconds = getLockoutSeconds(type);
 
-        attempts.compute(key, (k, info) -> {
-            if (info == null) {
-                info = new AttemptInfo();
-            }
-            info.failedAttempts++;
-            info.lastAttempt = Instant.now();
+        // Increment attempts counter
+        Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
 
-            if (info.failedAttempts >= maxAttempts) {
-                info.lockedUntil = Instant.now().plusSeconds(lockoutSeconds);
-                log.warn("IP {} blocked for {} endpoint - {} attempts, lockout {} minutes",
-                        ipAddress, type, info.failedAttempts, lockoutSeconds / 60);
-            }
+        // Set expiry on attempts key if it's new (expires after lockout period)
+        if (attempts != null && attempts == 1) {
+            redisTemplate.expire(attemptsKey, Duration.ofSeconds(lockoutSeconds * 2));
+        }
 
-            return info;
-        });
-
-        cleanupOldEntries();
+        // Check if we should lock out
+        if (attempts != null && attempts >= maxAttempts) {
+            redisTemplate.opsForValue().set(lockoutKey, String.valueOf(Instant.now().toEpochMilli()),
+                    Duration.ofSeconds(lockoutSeconds));
+            log.warn("IP {} blocked for {} endpoint - {} attempts, lockout {} minutes",
+                    ipAddress, type, attempts, lockoutSeconds / 60);
+        }
     }
 
     public void recordFailedAttempt(String ipAddress) {
@@ -117,17 +107,19 @@ public class RateLimitService {
     }
 
     public void recordSuccess(String ipAddress, EndpointType type) {
-        String key = buildKey(ipAddress, type);
-        attempts.remove(key);
+        String attemptsKey = buildAttemptsKey(ipAddress, type);
+        String lockoutKey = buildLockoutKey(ipAddress, type);
+        redisTemplate.delete(attemptsKey);
+        redisTemplate.delete(lockoutKey);
     }
 
     /**
      * Get number of failed attempts for an IP/endpoint
      */
     public int getFailedAttempts(String ipAddress, EndpointType type) {
-        String key = buildKey(ipAddress, type);
-        AttemptInfo info = attempts.get(key);
-        return info != null ? info.failedAttempts : 0;
+        String attemptsKey = buildAttemptsKey(ipAddress, type);
+        String value = redisTemplate.opsForValue().get(attemptsKey);
+        return value != null ? Integer.parseInt(value) : 0;
     }
 
     /**
@@ -141,8 +133,12 @@ public class RateLimitService {
         return getRemainingAttempts(ipAddress, EndpointType.LOGIN);
     }
 
-    private String buildKey(String ipAddress, EndpointType type) {
-        return ipAddress + ":" + type.name();
+    private String buildAttemptsKey(String ipAddress, EndpointType type) {
+        return RATE_LIMIT_PREFIX + ipAddress + ":" + type.name() + ATTEMPTS_SUFFIX;
+    }
+
+    private String buildLockoutKey(String ipAddress, EndpointType type) {
+        return RATE_LIMIT_PREFIX + ipAddress + ":" + type.name() + LOCKOUT_SUFFIX;
     }
 
     private int getMaxAttempts(EndpointType type) {
@@ -161,17 +157,5 @@ public class RateLimitService {
             case REFRESH -> REFRESH_LOCKOUT_SECONDS;
             case GENERAL -> GENERAL_LOCKOUT_SECONDS;
         };
-    }
-
-    private void cleanupOldEntries() {
-        Instant threshold = Instant.now().minusSeconds(CLEANUP_THRESHOLD_SECONDS);
-        attempts.entrySet().removeIf(entry -> entry.getValue().lastAttempt.isBefore(threshold) &&
-                (entry.getValue().lockedUntil == null || Instant.now().isAfter(entry.getValue().lockedUntil)));
-    }
-
-    private static class AttemptInfo {
-        int failedAttempts = 0;
-        Instant lastAttempt = Instant.now();
-        Instant lockedUntil = null;
     }
 }
