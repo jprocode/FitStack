@@ -171,15 +171,9 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
-        // Verify password (skip for OAuth-only users who don't have a password)
-        if (user.getPasswordHash() != null) {
-            if (password == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
-                log.warn("SECURITY: Failed account deletion attempt - wrong password for user {}", userId);
-                throw new UnauthorizedException("Invalid password");
-            }
-        }
-        // OAuth-only users (googleId set, no password) can delete without password
-        // verification
+        // Note: Password verification removed - frontend uses confirmation phrase
+        // "delete-my-account"
+        // This simplifies deletion for both OAuth and password users
 
         // Blacklist current token
         try {

@@ -46,12 +46,12 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-  const { user, updateUser, logout } = useAuthStore()
+  const { updateUser, logout } = useAuthStore()
   const { unitSystem } = useSettingsStore()
   const { toast } = useToast()
-  const isOAuthUser = user?.isOAuthUser ?? false
+  const DELETE_CONFIRMATION_PHRASE = 'delete-my-account'
 
   // Local state for Imperial height input
   const [heightFt, setHeightFt] = useState('')
@@ -138,19 +138,18 @@ export default function Profile() {
   }
 
   const handleDeleteAccount = async () => {
-    // Password required only for non-OAuth users
-    if (!isOAuthUser && !deletePassword) {
+    if (deleteConfirmText !== DELETE_CONFIRMATION_PHRASE) {
       toast({
         variant: 'destructive',
-        title: 'Password required',
-        description: 'Please enter your password to confirm deletion.',
+        title: 'Confirmation required',
+        description: `Please type "${DELETE_CONFIRMATION_PHRASE}" to confirm.`,
       })
       return
     }
 
     setIsDeleting(true)
     try {
-      await authApi.deleteAccount(isOAuthUser ? '' : deletePassword)
+      await authApi.deleteAccount('') // No password needed with confirmation phrase
       toast({
         title: 'Account deleted',
         description: 'Your account has been permanently deleted.',
@@ -161,9 +160,7 @@ export default function Profile() {
       toast({
         variant: 'destructive',
         title: 'Deletion failed',
-        description: isOAuthUser
-          ? 'Failed to delete account. Please try again.'
-          : 'Failed to delete account. Please check your password.',
+        description: 'Failed to delete account. Please try again.',
       })
     } finally {
       setIsDeleting(false)
@@ -378,24 +375,23 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
-              {!isOAuthUser && (
-                <div className="space-y-2">
-                  <Label htmlFor="deletePassword">Enter your password to confirm</Label>
-                  <Input
-                    id="deletePassword"
-                    type="password"
-                    placeholder="Your password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="deleteConfirm">Type <span className="font-mono font-bold text-destructive">{DELETE_CONFIRMATION_PHRASE}</span> to confirm</Label>
+                <Input
+                  id="deleteConfirm"
+                  type="text"
+                  placeholder={DELETE_CONFIRMATION_PHRASE}
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="font-mono"
+                />
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowDeleteConfirm(false)
-                    setDeletePassword('')
+                    setDeleteConfirmText('')
                   }}
                 >
                   Cancel
@@ -403,7 +399,7 @@ export default function Profile() {
                 <Button
                   variant="destructive"
                   onClick={handleDeleteAccount}
-                  disabled={isDeleting || (!isOAuthUser && !deletePassword)}
+                  disabled={isDeleting || deleteConfirmText !== DELETE_CONFIRMATION_PHRASE}
                 >
                   {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Yes, Delete My Account
