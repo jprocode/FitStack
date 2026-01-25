@@ -21,11 +21,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
+        // OAuth users have null passwordHash - use empty string as placeholder
+        // (authentication for OAuth users is handled via token, not password)
+        String password = user.getPasswordHash() != null ? user.getPasswordHash() : "";
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
-                user.getPasswordHash(),
-                new ArrayList<>()
-        );
+                password,
+                new ArrayList<>());
     }
 }
-
