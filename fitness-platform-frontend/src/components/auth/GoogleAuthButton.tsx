@@ -1,5 +1,5 @@
 import { useGoogleLogin } from '@react-oauth/google'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/components/ui/use-toast'
@@ -38,12 +38,19 @@ interface GoogleAuthButtonProps {
 
 export function GoogleAuthButton({ mode = 'login' }: GoogleAuthButtonProps) {
     const [isLoading, setIsLoading] = useState(false)
+    const isProcessingRef = useRef(false) // Prevent double submissions
     const navigate = useNavigate()
     const { setAuth } = useAuthStore()
     const { toast } = useToast()
 
     const handleGoogleSuccess = async (tokenResponse: { access_token: string }) => {
+        // Prevent duplicate submissions
+        if (isProcessingRef.current) {
+            return
+        }
+        isProcessingRef.current = true
         setIsLoading(true)
+
         try {
             // Exchange the access token for an ID token by calling Google's userinfo endpoint
             const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -88,6 +95,7 @@ export function GoogleAuthButton({ mode = 'login' }: GoogleAuthButtonProps) {
             })
         } finally {
             setIsLoading(false)
+            isProcessingRef.current = false
         }
     }
 
