@@ -1,10 +1,10 @@
 package com.fitstack.user.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class DeleteAccountRequest {
-    @NotBlank(message = "Password is required to confirm account deletion")
-    private String password;
+    // Confirmation text is optional - frontend uses "delete-my-account" phrase
+    // Password validation has been removed to support OAuth users
+    private String confirmationText;
 }

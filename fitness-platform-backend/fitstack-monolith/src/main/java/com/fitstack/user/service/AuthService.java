@@ -167,11 +167,11 @@ public class AuthService {
     }
 
     @Transactional("usersTransactionManager")
-    public void deleteAccount(Long userId, String password, String currentToken) {
+    public void deleteAccount(Long userId, String currentToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
-        // Note: Password verification removed - frontend uses confirmation phrase
+        // Password verification removed - frontend uses confirmation phrase
         // "delete-my-account"
         // This simplifies deletion for both OAuth and password users
 

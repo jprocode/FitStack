@@ -66,7 +66,7 @@ public class AuthController {
 
     @DeleteMapping("/account")
     public ResponseEntity<Map<String, String>> deleteAccount(
-            @Valid @RequestBody DeleteAccountRequest request,
+            @RequestBody DeleteAccountRequest request,
             @RequestHeader("X-User-Id") Long userId,
             HttpServletRequest httpRequest) {
         String authHeader = httpRequest.getHeader("Authorization");
@@ -74,7 +74,8 @@ public class AuthController {
                 ? authHeader.substring(7)
                 : null;
 
-        authService.deleteAccount(userId, request.getPassword(), token);
+        // Note: Confirmation phrase validation is done in frontend
+        authService.deleteAccount(userId, token);
         return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
     }
 
