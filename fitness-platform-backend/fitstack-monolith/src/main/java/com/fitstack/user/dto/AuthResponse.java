@@ -27,5 +27,6 @@ public class AuthResponse {
         private String email;
         private String firstName;
         private String lastName;
+        private boolean isOAuthUser; // True if user signed up via Google OAuth (no password)
     }
 }

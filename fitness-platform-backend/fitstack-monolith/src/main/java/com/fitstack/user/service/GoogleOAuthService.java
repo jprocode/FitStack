@@ -190,6 +190,7 @@ public class GoogleOAuthService {
                         .email(user.getEmail())
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
+                        .isOAuthUser(true) // OAuth users always have no password
                         .build())
                 .build();
     }

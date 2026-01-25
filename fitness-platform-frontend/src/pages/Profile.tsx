@@ -48,9 +48,10 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-  const { updateUser, logout } = useAuthStore()
+  const { user, updateUser, logout } = useAuthStore()
   const { unitSystem } = useSettingsStore()
   const { toast } = useToast()
+  const isOAuthUser = user?.isOAuthUser ?? false
 
   // Local state for Imperial height input
   const [heightFt, setHeightFt] = useState('')
@@ -137,7 +138,8 @@ export default function Profile() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!deletePassword) {
+    // Password required only for non-OAuth users
+    if (!isOAuthUser && !deletePassword) {
       toast({
         variant: 'destructive',
         title: 'Password required',
@@ -148,7 +150,7 @@ export default function Profile() {
 
     setIsDeleting(true)
     try {
-      await authApi.deleteAccount(deletePassword)
+      await authApi.deleteAccount(isOAuthUser ? '' : deletePassword)
       toast({
         title: 'Account deleted',
         description: 'Your account has been permanently deleted.',
@@ -159,7 +161,9 @@ export default function Profile() {
       toast({
         variant: 'destructive',
         title: 'Deletion failed',
-        description: 'Failed to delete account. Please check your password.',
+        description: isOAuthUser
+          ? 'Failed to delete account. Please try again.'
+          : 'Failed to delete account. Please check your password.',
       })
     } finally {
       setIsDeleting(false)
@@ -374,16 +378,18 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="deletePassword">Enter your password to confirm</Label>
-                <Input
-                  id="deletePassword"
-                  type="password"
-                  placeholder="Your password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                />
-              </div>
+              {!isOAuthUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="deletePassword">Enter your password to confirm</Label>
+                  <Input
+                    id="deletePassword"
+                    type="password"
+                    placeholder="Your password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -397,7 +403,7 @@ export default function Profile() {
                 <Button
                   variant="destructive"
                   onClick={handleDeleteAccount}
-                  disabled={isDeleting || !deletePassword}
+                  disabled={isDeleting || (!isOAuthUser && !deletePassword)}
                 >
                   {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Yes, Delete My Account

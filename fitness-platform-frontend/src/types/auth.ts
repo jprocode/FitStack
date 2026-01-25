@@ -3,6 +3,7 @@ export interface User {
   email: string
   firstName: string | null
   lastName: string | null
+  isOAuthUser?: boolean // True if user signed up via Google OAuth (no password)
 }
 
 export interface AuthResponse {
