@@ -9,13 +9,15 @@ import java.util.Optional;
 
 @Repository
 public interface GoalRepository extends JpaRepository<Goal, Long> {
-    
-    List<Goal> findByUserIdOrderByCreatedAtDesc(Long userId);
-    
-    List<Goal> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, Goal.GoalStatus status);
-    
-    Optional<Goal> findByIdAndUserId(Long id, Long userId);
-    
-    Optional<Goal> findTopByUserIdAndStatusOrderByCreatedAtDesc(Long userId, Goal.GoalStatus status);
-}
 
+    List<Goal> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<Goal> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, Goal.GoalStatus status);
+
+    Optional<Goal> findByIdAndUserId(Long id, Long userId);
+
+    Optional<Goal> findTopByUserIdAndStatusOrderByCreatedAtDesc(Long userId, Goal.GoalStatus status);
+
+    // For cascade delete on account deletion
+    void deleteByUserId(Long userId);
+}
