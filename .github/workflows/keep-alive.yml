@@ -38,11 +38,11 @@ jobs:
           # 70% health check, 20% exercises, 10% muscle groups
           RAND=$((RANDOM % 100))
           if [ $RAND -lt 70 ]; then
-            ENDPOINT="https://fitstack-backend.onrender.com/actuator/health"
+            ENDPOINT="https://fitstack-api.onrender.com/actuator/health"
           elif [ $RAND -lt 90 ]; then
-            ENDPOINT="https://fitstack-backend.onrender.com/api/workouts/exercises?page=0&size=1"
+            ENDPOINT="https://fitstack-api.onrender.com/api/workouts/exercises?page=0&size=1"
           else
-            ENDPOINT="https://fitstack-backend.onrender.com/api/workouts/exercises/muscle-groups"
+            ENDPOINT="https://fitstack-api.onrender.com/api/workouts/exercises/muscle-groups"
           fi
           echo "url=$ENDPOINT" >> $GITHUB_OUTPUT
           echo "Selected endpoint: $ENDPOINT"
