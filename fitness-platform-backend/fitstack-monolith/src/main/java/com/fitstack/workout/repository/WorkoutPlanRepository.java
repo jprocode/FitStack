@@ -40,4 +40,7 @@ public interface WorkoutPlanRepository extends JpaRepository<WorkoutPlan, Long> 
     @Modifying
     @Query("UPDATE WorkoutPlan wp SET wp.isPrimary = false WHERE wp.userId = :userId AND wp.isPrimary = true")
     void clearPrimaryForUser(@Param("userId") Long userId);
+
+    // For user account deletion
+    void deleteByUserId(Long userId);
 }

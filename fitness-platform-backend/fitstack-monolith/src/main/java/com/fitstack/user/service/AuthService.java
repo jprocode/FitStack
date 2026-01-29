@@ -8,10 +8,7 @@ import com.fitstack.user.dto.LoginRequest;
 import com.fitstack.user.dto.RegisterRequest;
 import com.fitstack.user.entity.RefreshToken;
 import com.fitstack.user.entity.User;
-import com.fitstack.user.repository.BodyMetricRepository;
-import com.fitstack.user.repository.GoalRepository;
 import com.fitstack.user.repository.RefreshTokenRepository;
-import com.fitstack.user.repository.UserProfileRepository;
 import com.fitstack.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +28,11 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final BodyMetricRepository bodyMetricRepository;
-    private final GoalRepository goalRepository;
-    private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RateLimitService rateLimitService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserDataDeletionService userDataDeletionService;
 
     @Value("${jwt.refresh-expiration:604800000}") // Default 7 days
     private Long refreshTokenExpiration;
@@ -190,13 +185,8 @@ public class AuthService {
             log.warn("Could not blacklist token during account deletion: {}", e.getMessage());
         }
 
-        // Delete all related data first (cascade delete)
-        bodyMetricRepository.deleteByUserId(userId);
-        goalRepository.deleteByUserId(userId);
-        userProfileRepository.deleteByUserId(userId);
-
-        // Delete refresh tokens
-        refreshTokenRepository.deleteByUserId(userId);
+        // Delete all related data across all schemas using centralized service
+        userDataDeletionService.deleteAllUserData(userId);
 
         // Delete user
         userRepository.delete(user);

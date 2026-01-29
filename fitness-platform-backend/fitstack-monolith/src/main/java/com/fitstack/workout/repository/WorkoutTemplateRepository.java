@@ -15,5 +15,7 @@ public interface WorkoutTemplateRepository extends JpaRepository<WorkoutTemplate
     Optional<WorkoutTemplate> findByIdAndUserId(Long id, Long userId);
 
     List<WorkoutTemplate> findByIsPublicTrueOrderByCreatedAtDesc();
-}
 
+    // For user account deletion
+    void deleteByUserId(Long userId);
+}

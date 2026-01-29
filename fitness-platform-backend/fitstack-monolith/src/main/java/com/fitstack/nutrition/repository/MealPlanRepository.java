@@ -17,5 +17,7 @@ public interface MealPlanRepository extends JpaRepository<MealPlan, Long> {
     boolean existsByIdAndUserId(Long id, Long userId);
 
     void deleteByIdAndUserId(Long id, Long userId);
-}
 
+    // For user account deletion
+    void deleteByUserId(Long userId);
+}

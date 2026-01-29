@@ -22,4 +22,7 @@ public interface CustomFoodRepository extends JpaRepository<CustomFood, Long> {
     boolean existsByIdAndUserId(Long id, Long userId);
 
     void deleteByIdAndUserId(Long id, Long userId);
+
+    // For user account deletion
+    void deleteByUserId(Long userId);
 }
